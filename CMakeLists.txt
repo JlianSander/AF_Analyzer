@@ -35,7 +35,6 @@ set(HEADERS
 	${INCLD_LOGIC}/SatSolver_cadical.h
 	${INCLD_LOGIC}/ScepticalCheck.h 
 	${INCLD_LOGIC}/Solver_DS_PR.h 	
-	${INCLD_LOGIC}/Tests.h
 
 	${INCLD_UTIL}/VectorBitSet.h
 	${INCLD_UTIL}/MemoryWatchDog.h
@@ -55,8 +54,6 @@ set(SRCFILES
 	${SRC_LOGIC}SatSolver_cadical.cpp
 	${SRC_LOGIC}ScepticalCheck.cpp
 	${SRC_LOGIC}Solver_DS_PR.cpp
-
-	${SRC_LOGIC}Tests.cpp
 
 	${SRC_UTIL}MemoryWatchDog.c
 	${SRC_UTIL}Printer.cpp

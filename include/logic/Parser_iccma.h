@@ -3,7 +3,8 @@
 
 #include <cstdint>
 #include <iostream>			
-#include <fstream>			
+#include <fstream>	
+#include <filesystem>
 #include <algorithm>
 #include <sstream>
 
@@ -27,7 +28,7 @@ public:
 	/// <param name="framework"> Object of the framework to create.</param>
 	/// <param name="file">String that describes the location of the file to open.</param>
 	/// <returns>The abstract argumentation framework, which is describes by the file.</returns>
-	static void parse_af(AF &framework, string file);
+	static void parse_af(AF &framework, const std::filesystem::path filename);
 };
 
 #endif

@@ -1,7 +1,6 @@
 #include "../../include/logic/PreProcessor_DS_PR.h"
 
-static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query) {
-	//long mem_base = get_mem_usage();																												//DEBUG
+static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query, const std::filesystem::path file, bool is_verbose) {
 	vector<uint32_t> active_args_vector;
 	vector<uint8_t> active_args_bitset(framework.num_args + 1, 0);
 
@@ -32,7 +31,11 @@ static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query) {
 	}
 
 	VectorBitSet active_args = VectorBitSet(active_args_vector, active_args_bitset);
-	//printf("Memory space of initialized active arguments: %ld/%ld [kB]\n", get_mem_usage() - mem_base, get_mem_usage());							//DEBUG
+
+	if (is_verbose) {
+		int num_args_reducted = framework.num_args - active_args._vector.size();
+		cout << file.filename() << "----- number of arguments reduced by cone of influence: " << num_args_reducted << "/" << framework.num_args << endl;
+	}
 	return active_args;
 }
 
@@ -40,7 +43,8 @@ static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query) {
 /*===========================================================================================================================================================*/
 
 
-static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_args, uint32_t query, VectorBitSet &out_reduct)
+static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_args, uint32_t query, VectorBitSet &out_reduct
+	, int &num_query_grounded_contained, int &num_query_grounded_rejected, const std::filesystem::path file, bool is_verbose)
 {
 	// fill list with unattacked arguments
 	list<uint32_t> ls_unattacked_unprocessed;
@@ -58,6 +62,7 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 
 	// init variable of current reduct
 	out_reduct = active_args;
+	int num_args_initial = out_reduct._vector.size();
 
 	//process list of unattacked arguments
 	for (list<uint32_t>::iterator mIter = ls_unattacked_unprocessed.begin(); mIter != ls_unattacked_unprocessed.end(); ++mIter) {
@@ -65,12 +70,20 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 
 		//reject query if it gets attacked by argument of grounded extension
 		if( ua == query) {
+			if (is_verbose) {
+				cout << file.filename() << "------ query is in grounded extension" << endl;
+			}
+			num_query_grounded_contained++;
 			return pre_proc_result::accepted;
 		}
 
 
 		//reject query if it gets attacked by argument of grounded extension
 		if (framework.victims[ua]._bitset[query]) {
+			if (is_verbose) {
+				cout << file.filename() << "------ query rejected by grounded extension" << endl;
+			}
+			num_query_grounded_rejected++;
 			return pre_proc_result::rejected;
 		}
 
@@ -105,31 +118,41 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 		out_reduct = Reduct::get_reduct(out_reduct, framework, ua);
 	}
 
+	if (is_verbose) {
+		cout << file.filename() << "===== no final decision during preprocessing" << endl;
+		int num_args_reducted = num_args_initial - out_reduct._vector.size();
+		cout << file.filename() << "===== number of arguments reduced by grounded reduction: " << num_args_reducted << "/" << framework.num_args << endl;
+	}
 	return pre_proc_result::unknown;
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitSet &out_reduct) {
-	//long mem_base = get_mem_usage();																													//DEBUG
-
+pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitSet &out_reduct, int &num_query_selfattack, int &num_query_no_attacker,
+	int &num_query_grounded_contained, int &num_query_grounded_rejected, const std::filesystem::path file, bool is_verbose) {
+	
 	if (framework.victims[query]._bitset[query])
 	{
+		if (is_verbose) {
+			cout << file.filename() << "------ query attacks itself" << endl;
+		}
+		num_query_selfattack++;
 		return pre_proc_result::rejected;
 	}
 
 	if (framework.attackers[query]._vector.empty())
 	{
+		if (is_verbose) {
+			cout << file.filename() << "------ query is unattacked" << endl;
+		}
+		num_query_no_attacker++;
 		return pre_proc_result::accepted;
 	}
 
-	VectorBitSet active_args = calculate_cone_influence(framework, query);
+	VectorBitSet active_args = calculate_cone_influence(framework, query, file, is_verbose);
 	
-	pre_proc_result result =  reduce_by_grounded(framework, active_args, query, out_reduct);
-
-	//printf("PreProc_DS_PR::process() finished - voluntary context switches: %ld - involuntary context switches: %ld - memory usage: %ld/%ld [kB]\n",
-	//	get_ctxt_switches_volun(), get_ctxt_switches_involun(), get_mem_usage() - mem_base, get_mem_usage());											//DEBUG
+	pre_proc_result result =  reduce_by_grounded(framework, active_args, query, out_reduct, num_query_grounded_contained, num_query_grounded_rejected, file, is_verbose);
 
 	return result;
 }

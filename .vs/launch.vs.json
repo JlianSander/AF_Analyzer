@@ -4,19 +4,15 @@
   "configurations": [
     {
       "type": "cppgdb",
-      "name": "ParallelSolver",
+      "name": "AF_Analyzer",
       "project": "CMakeLists.txt",
-      "projectTarget": "ParallelSolver",
+      "projectTarget": "AF_Analyzer",
       "comment": "Learn how to configure remote debugging. For more info, see http://aka.ms/vslinuxdebug",
       "debuggerConfiguration": "gdb",
       "MIMode": "gdb",
       "args": [
-        "-p",
-        "DS-PR",
-        "-a",
-        "105",
-        "-f",
-        "/home/jsander/solvers/ICCMA23/benchmarks/main/ferry2.pfile-L2-C3-09.pddl.1.cnf.i23"
+        "-d",
+        "/home/jsander/solvers/ICCMA23/test"
       ],
       "env": {}
     }

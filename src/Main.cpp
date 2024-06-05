@@ -4,11 +4,8 @@ using namespace std;
 
 void static print_usage()
 {
-	cout << "Usage: " << SOLVERNAME << " -p <task> -f <file> -fo <format> [-a <query>]\n\n";
-	cout << "  <task>      computational problem; for a list of available problems use option --problems\n";
-	cout << "  <file>      input argumentation framework\n";
-	cout << "  <format>    file format for input AF; for a list of available formats use option --formats\n";
-	cout << "  <query>     query argument\n";
+	cout << "Usage: " << PROGAMNAME << "-d <directory> \n\n";
+	cout << "  <directory>    container of  argumentation frameworks\n";
 	cout << "Options:\n";
 	cout << "  --help      Displays this help message.\n";
 	cout << "  --version   Prints version and author information.\n";
@@ -21,7 +18,7 @@ void static print_usage()
 
 void static print_version()
 {
-	cout << SOLVERNAME << " (version "<< VERSIONNUMBER <<")\n"
+	cout << PROGAMNAME << " (version "<< VERSIONNUMBER <<")\n"
 		<< "Lars Bengel, University of Hagen <lars.bengel@fernuni-hagen.de>\n" 
 		<< "Julian Sander, University of Hagen <julian.sander@fernuni-hagen.de>\n";
 }
@@ -31,7 +28,8 @@ void static print_version()
 
 void static print_formats()
 {
-	cout << "[i23]\n";
+	cout << "AF: [i23]" << endl;
+	cout << "Query: [af.arg]" << endl;
 }
 
 /*===========================================================================================================================================================*/
@@ -63,7 +61,104 @@ void static print_problems()
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int execute(int argc, char **argv)
+uint32_t static read_query(std::filesystem::__cxx11::directory_entry &file)
+{
+	filesystem::path query_file{ file.path() }, extension_query{ ".af.arg" };
+	query_file.replace_extension(extension_query);
+	ifstream input;
+	input.open(query_file);
+
+	if (!input.good()) {
+		cerr << "Cannot open query file\n";
+		exit(1);
+	}
+
+	string line, query;
+
+	getline(input, line);
+	std::istringstream iss(line);
+	iss >> query;
+	return std::stoi(query);
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+void calculateSolution(uint32_t query, AF &framework, const std::filesystem::path file, bool is_verbose)
+{
+	list<uint32_t> proof_extension;
+	bool skept_accepted = false;
+
+	skept_accepted = Solver_DS_PR::solve(query, framework, proof_extension, NUM_CORES, 
+		num_query_selfattack, num_query_no_attacker, num_query_grounded_contained, num_query_grounded_rejected, file, is_verbose);
+	cout << (skept_accepted ? "YES" : "NO") << endl;
+	if (!skept_accepted)
+	{
+		cout << "w " << endl;
+
+		if (!proof_extension.empty()) {
+			for (list<uint32_t>::iterator mIter = proof_extension.begin(); mIter != proof_extension.end(); ++mIter) {
+				cout << *mIter << " ";
+			}
+			proof_extension;
+			cout << endl;
+		}
+	}
+
+	//free allocated memory
+	proof_extension.clear();
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+void static start_pre_processor(uint32_t query, AF &framework, const std::filesystem::path file) {
+	VectorBitSet initial_reduct = VectorBitSet();
+	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, query, initial_reduct, num_query_selfattack, num_query_no_attacker,
+		num_query_grounded_contained, num_query_grounded_rejected, file, true);
+}
+
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+int handleFile(filesystem::directory_entry file) {
+
+	//string file_path = file.path().stem().string();
+	//string file_format = file_path.substr(file_path.find_last_of(".") + 1, file_path.length() - file_path.find_last_of(".") - 1);
+	string file_format = file.path().extension();
+
+	if (file_format != ".i23") {
+		//cerr << " Unsupported file format: " << file_format << endl;
+		return 1;
+	}
+	else {
+		num_files_processed++;
+		cout << endl;
+	}
+
+	AF framework;
+	ParserICCMA::parse_af(framework, file.path());
+	uint32_t query = read_query(file);
+	start_pre_processor(query, framework, file.path());
+	//calculateSolution(query, framework);
+	return 0;
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+static void print_statistics() {
+	cout << "Instances with query self-attacks: " << num_query_selfattack << "/" << num_files_processed << endl;
+	cout << "Instances with unattacked queries: " << num_query_no_attacker << "/" << num_files_processed << endl;
+	cout << "Instances which were part of grounded extension: " << num_query_grounded_contained << "/" << num_files_processed << endl;
+	cout << "Instances which were rejected by grounded extension: " << num_query_grounded_rejected << "/" << num_files_processed << endl;
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+int main(int argc, char **argv)
 {
 	if (argc == 1) {
 		print_version();
@@ -72,23 +167,14 @@ int execute(int argc, char **argv)
 
 	int option_index = 0;
 	int opt = 0;
-	string problem, file, fileformat, query;
+	string dir;
 
 	while ((opt = getopt_long_only(argc, argv, "", longopts, &option_index)) != -1) {
 		switch (opt) {
 		case 0:
 			break;
-		case 'p':
-			problem = optarg;
-			break;
-		case 'f':
-			file = optarg;
-			break;
-		case 'o':
-			fileformat = optarg;
-			break;
-		case 'a':
-			query = optarg;
+		case 'd':
+			dir = optarg;
 			break;
 		default:
 			return 1;
@@ -115,97 +201,16 @@ int execute(int argc, char **argv)
 		return 0;
 	}
 
-	if (problem.empty()) {
-		cerr << argv[0] << ": Problem must be specified via -p flag\n";
+	if (dir.empty()) {
+		cerr << argv[0] << ": Input directory must be specified via -d flag\n";
 		return 1;
 	}
 
-	if (file.empty()) {
-		cerr << argv[0] << ": Input file must be specified via -f flag\n";
-		return 1;
+	for (const auto &dirEntry : recursive_directory_iterator(dir)) {
+		handleFile(dirEntry);
 	}
 
-	//printf("Set file format\n");																										//DEBUG
-
-	if (fileformat.empty()) {
-		fileformat = file.substr(file.find_last_of(".") + 1, file.length() - file.find_last_of(".") - 1);
-		/*cerr << argv[0] << ": File format must be specified via -fo flag\n";
-		return 1;*/
-	}
-
-	AF framework;
-	if (fileformat == "i23") {
-		ParserICCMA::parse_af(framework, file);
-	}
-	else {
-		cerr << argv[0] << ": Unsupported file format\n";
-		return 1;
-	}
-
-	string task = problem.substr(0, problem.find("-"));
-	problem.erase(0, problem.find("-") + 1);
-	string sem = problem.substr(0, problem.find("-"));
-	switch (Enums::string_to_task(task)) {
-		case DS:
-		{
-			if (query.empty()) {
-				cerr << argv[0] << ": Query argument must be specified via -a flag\n";
-				return 1;
-			}
-
-			uint32_t argument = std::stoi(query);
-			list<uint32_t> proof_extension;
-			bool skept_accepted = false;
-
-			switch (Enums::string_to_sem(sem)) {
-				case PR:
-					skept_accepted = Solver_DS_PR::solve(argument, framework, proof_extension, NUM_CORES);
-					break;
-				default:
-					cerr << argv[0] << ": Unsupported semantics\n";
-					return 1;
-			}
-
-			cout << (skept_accepted ? "YES" : "NO") << endl;
-			if (!skept_accepted)
-			{
-				/*if (*proof_extension != NULL)
-				{
-					EXTENSIONSOLVER::BuildExtension(framework, actives, proof_extension);
-				}*/
-				cout << "w " << endl;
-
-				if (!proof_extension.empty()) {
-					for (list<uint32_t>::iterator mIter = proof_extension.begin(); mIter != proof_extension.end(); ++mIter) {
-						cout << *mIter << " ";
-					}
-					proof_extension;
-					cout << endl;
-				}
-			}
-
-			//free allocated memory
-			proof_extension.clear();
-			break;
-		}
-		default:
-			cerr << argv[0] << ": Problem not supported!\n";
-			return 1;
-	}
-
+	cout << endl;
+	print_statistics();
 	return 0;
-}
-
-int test(int argc, char **argv)
-{
-
-	TestCases::run_Tests();
-
-	return 0;
-}
-
-int main(int argc, char **argv)
-{
-	execute(argc, argv);
-	//test(argc, argv)
 }

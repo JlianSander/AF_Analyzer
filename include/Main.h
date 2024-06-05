@@ -33,6 +33,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdint.h>
+#include <filesystem>
 #include <omp.h>
 #include <getopt.h>			// parsing commandline options
 
@@ -46,10 +47,10 @@ extern "C" {
 
 #include "../include/logic/Enums.h"
 
-#include "../include/logic/Tests.h"
+using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 
-constexpr auto SOLVERNAME = "ParallelSolver";
-constexpr auto VERSIONNUMBER = "1.15";
+constexpr auto PROGAMNAME = "AF_Analyzer";
+constexpr auto VERSIONNUMBER = "1.0";
 constexpr auto NUM_CORES = 0;
 
 static int version_flag = 0;
@@ -57,17 +58,20 @@ static int usage_flag = 0;
 static int formats_flag = 0;
 static int problems_flag = 0;
 
+static int num_query_selfattack = 0;
+static int num_query_no_attacker = 0;
+static int num_query_grounded_contained = 0;
+static int num_query_grounded_rejected = 0;
+static int num_files_processed = 0;
+
 const struct option longopts[] =
 {
 	{"help", no_argument, &usage_flag, 1},
 	{"version", no_argument, &version_flag, 1},
 	{"formats", no_argument, &formats_flag, 1},
 	{"problems", no_argument, &problems_flag, 1},
-	{"p", required_argument, 0, 'p'},
-	{"f", required_argument, 0, 'f'},
-	{"fo", required_argument, 0, 'o'},
-	{"a", required_argument, 0, 'a'},
-	{0, 0, 0, 0}
+	{"d", required_argument, 0, 'd'},
+	{0}
 };
 
 /// <summary>

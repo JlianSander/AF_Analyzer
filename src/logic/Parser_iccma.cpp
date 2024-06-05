@@ -2,7 +2,7 @@
 
 using namespace std;
 
-void ParserICCMA::parse_af(AF &framework, string file)
+void ParserICCMA::parse_af(AF &framework, const std::filesystem::path file)
 {
 	//long mem_base = get_mem_usage();																											//DEBUG
 	//float start_time = omp_get_wtime();																										//DEBUG
