@@ -206,8 +206,18 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	for (const auto &dirEntry : recursive_directory_iterator(dir)) {
-		handleFile(dirEntry);
+	typedef vector<filesystem::directory_entry> vec; 
+	vec v;                                
+
+	copy(filesystem::directory_iterator(dir), filesystem::directory_iterator(), back_inserter(v));
+
+	sort(v.begin(), v.end());				// sort, since directory iteration
+											// is not ordered on some file systems
+
+	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
+	{
+		cout << "   " << *it << '\n';
+		handleFile(*it);
 	}
 
 	cout << endl;

@@ -46,6 +46,8 @@ static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query, cons
 static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_args, uint32_t query, VectorBitSet &out_reduct
 	, int &num_query_grounded_contained, int &num_query_grounded_rejected, const std::filesystem::path file, bool is_verbose)
 {
+	uint32_t num_args_initial = active_args._vector.size();
+
 	// fill list with unattacked arguments
 	list<uint32_t> ls_unattacked_unprocessed;
 	vector<uint32_t> num_attacker;
@@ -62,7 +64,6 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 
 	// init variable of current reduct
 	out_reduct = active_args;
-	int num_args_initial = out_reduct._vector.size();
 
 	//process list of unattacked arguments
 	for (list<uint32_t>::iterator mIter = ls_unattacked_unprocessed.begin(); mIter != ls_unattacked_unprocessed.end(); ++mIter) {
@@ -121,7 +122,7 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 	if (is_verbose) {
 		cout << file.filename() << "===== no final decision during preprocessing" << endl;
 		int num_args_reducted = num_args_initial - out_reduct._vector.size();
-		cout << file.filename() << "===== number of arguments reduced by grounded reduction: " << num_args_reducted << "/" << framework.num_args << endl;
+		cout << file.filename() << "===== number of arguments reduced by grounded reduction: " << num_args_reducted << "/" << num_args_initial << endl;
 	}
 	return pre_proc_result::unknown;
 }
