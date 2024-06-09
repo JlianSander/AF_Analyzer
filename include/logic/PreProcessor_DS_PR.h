@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <list>
 
+#include "../Main.h"
 #include "AF.h"
 #include "Reduct.h"
 

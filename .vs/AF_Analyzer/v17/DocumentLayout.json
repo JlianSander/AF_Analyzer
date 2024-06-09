@@ -3,10 +3,6 @@
   "WorkspaceRootPath": "E:\\Entwicklung\\Software\\AF_Analyzer\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\PreProcessor_DS_PR.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\logic\\PreProcessor_DS_PR.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\src\\Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
@@ -15,28 +11,36 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\Main.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\Solver_DS_PR.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\logic\\Solver_DS_PR.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\PreProcessor_DS_PR.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\logic\\PreProcessor_DS_PR.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\Parser_iccma.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\logic\\Parser_iccma.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\.vs\\launch.vs.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:.vs\\launch.vs.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\include\\logic\\Parser_iccma.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\logic\\Parser_iccma.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\include\\logic\\PreProcessor_DS_PR.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\logic\\PreProcessor_DS_PR.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\Solver_DS_PR.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\logic\\Solver_DS_PR.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\include\\logic\\Solver_DS_PR.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\logic\\Solver_DS_PR.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\.vs\\launch.vs.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:.vs\\launch.vs.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Entwicklung\\Software\\AF_Analyzer\\CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
   ],
   "DocumentGroupContainers": [
@@ -46,7 +50,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 16,
+          "SelectedChildIndex": 21,
           "Children": [
             {
               "$type": "Bookmark",
@@ -86,19 +90,32 @@
             },
             {
               "$type": "Bookmark",
-              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
-            },
-            {
-              "$type": "Bookmark",
               "Name": "ST:44:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
             },
             {
               "$type": "Bookmark",
-              "Name": "ST:40:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:41:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 5,
+              "Title": "Parser_iccma.h",
+              "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\include\\logic\\Parser_iccma.h",
+              "RelativeDocumentMoniker": "include\\logic\\Parser_iccma.h",
+              "ToolTip": "E:\\Entwicklung\\Software\\AF_Analyzer\\include\\logic\\Parser_iccma.h",
+              "RelativeToolTip": "include\\logic\\Parser_iccma.h",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAwAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-06-09T06:30:32.062Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "CMakeLists.txt",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\CMakeLists.txt",
               "RelativeDocumentMoniker": "CMakeLists.txt",
@@ -111,7 +128,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 7,
               "Title": "Solver_DS_PR.h",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\include\\logic\\Solver_DS_PR.h",
               "RelativeDocumentMoniker": "include\\logic\\Solver_DS_PR.h",
@@ -124,59 +141,59 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 2,
               "Title": "Solver_DS_PR.cpp",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\Solver_DS_PR.cpp",
               "RelativeDocumentMoniker": "src\\logic\\Solver_DS_PR.cpp",
               "ToolTip": "E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\Solver_DS_PR.cpp",
               "RelativeToolTip": "src\\logic\\Solver_DS_PR.cpp",
-              "ViewState": "AQIAADoBAAAAAAAAAAAAAGABAABEAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAACoBAAACAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-06-05T14:43:24.669Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Parser_iccma.cpp",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\Parser_iccma.cpp",
               "RelativeDocumentMoniker": "src\\logic\\Parser_iccma.cpp",
               "ToolTip": "E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\Parser_iccma.cpp",
               "RelativeToolTip": "src\\logic\\Parser_iccma.cpp",
-              "ViewState": "AQIAABIAAAAAAAAAAAAAAAQAAABKAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAACcAAAA7AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-06-05T14:24:41.26Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "PreProcessor_DS_PR.cpp",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\PreProcessor_DS_PR.cpp",
               "RelativeDocumentMoniker": "src\\logic\\PreProcessor_DS_PR.cpp",
               "ToolTip": "E:\\Entwicklung\\Software\\AF_Analyzer\\src\\logic\\PreProcessor_DS_PR.cpp",
               "RelativeToolTip": "src\\logic\\PreProcessor_DS_PR.cpp",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAFcAAAAZAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABEAAABEAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-06-05T14:08:08.37Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "PreProcessor_DS_PR.h",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\include\\logic\\PreProcessor_DS_PR.h",
               "RelativeDocumentMoniker": "include\\logic\\PreProcessor_DS_PR.h",
               "ToolTip": "E:\\Entwicklung\\Software\\AF_Analyzer\\include\\logic\\PreProcessor_DS_PR.h",
               "RelativeToolTip": "include\\logic\\PreProcessor_DS_PR.h",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAABkAAAAfAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAUAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-06-05T14:07:52.705Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 8,
               "Title": "launch.vs.json",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\.vs\\launch.vs.json",
               "RelativeDocumentMoniker": ".vs\\launch.vs.json",
@@ -189,26 +206,26 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "Main.h",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\include\\Main.h",
               "RelativeDocumentMoniker": "include\\Main.h",
               "ToolTip": "E:\\Entwicklung\\Software\\AF_Analyzer\\include\\Main.h",
               "RelativeToolTip": "include\\Main.h",
-              "ViewState": "AQIAACEAAAAAAAAAAAAAAEAAAAAjAAAA",
+              "ViewState": "AQIAAD4AAAAAAAAAAAAAAFkAAAAeAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-06-04T14:14:27.248Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "Main.cpp",
               "DocumentMoniker": "E:\\Entwicklung\\Software\\AF_Analyzer\\src\\Main.cpp",
               "RelativeDocumentMoniker": "src\\Main.cpp",
               "ToolTip": "E:\\Entwicklung\\Software\\AF_Analyzer\\src\\Main.cpp",
               "RelativeToolTip": "src\\Main.cpp",
-              "ViewState": "AQIAAKwAAAAAAAAAAAAAAOAAAAAKAAAA",
+              "ViewState": "AQIAALoAAAAAAAAAAAAAANoAAAAEAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-06-04T14:11:22.461Z",
               "EditorCaption": ""

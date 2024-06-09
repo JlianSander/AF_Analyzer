@@ -4,7 +4,7 @@ using namespace std;
 
 void static print_usage()
 {
-	cout << "Usage: " << PROGAMNAME << "-d <directory> \n\n";
+	cout << "Usage: " << PROGAMNAME << " -d <directory> \n\n";
 	cout << "  <directory>    container of  argumentation frameworks\n";
 	cout << "Options:\n";
 	cout << "  --help      Displays this help message.\n";
@@ -216,11 +216,28 @@ int main(int argc, char **argv)
 
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
 	{
-		cout << "   " << *it << '\n';
+		//cout << "   " << *it << '\n';
 		handleFile(*it);
 	}
 
 	cout << endl;
 	print_statistics();
 	return 0;
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+bool Main::check_memory_limit_crossed() {
+	int current_Memory = get_mem_usage();
+	
+	if (current_Memory > get_instance().maxMemory) {
+		get_instance().maxMemory = current_Memory;
+		if (current_Memory > LIMIT_MEMORY_KB) {
+			//cout << "Memory allocated: " << current_Memory << "/" << get_instance().maxMemory << endl;											//DEBUG
+			return true;
+		}
+	}
+
+	return false;
 }

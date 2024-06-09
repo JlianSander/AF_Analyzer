@@ -52,6 +52,7 @@ using recursive_directory_iterator = std::filesystem::recursive_directory_iterat
 constexpr auto PROGAMNAME = "AF_Analyzer";
 constexpr auto VERSIONNUMBER = "1.0";
 constexpr auto NUM_CORES = 0;
+constexpr auto LIMIT_MEMORY_KB = 30000000;
 
 static int version_flag = 0;
 static int usage_flag = 0;
@@ -82,4 +83,23 @@ const struct option longopts[] =
 /// <returns>0 iff the program exited without error. 1 otherwise.</returns>
 int main(int argc, char **argv);
 
+class Main {
+public:
+    static Main &get_instance()
+    {
+        static Main instance; 
+        return instance;
+    }
+
+	int maxMemory = 0;
+
+	static bool check_memory_limit_crossed();
+
+private:
+    Main() {} 
+
+public:
+    Main(Main const &) = delete;
+    void operator=(Main const &) = delete;
+};
 #endif

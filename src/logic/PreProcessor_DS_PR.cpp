@@ -14,6 +14,11 @@ static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query, cons
 		const auto &argument = *mIter;
 		uint32_t distance = framework.distance_to_query[argument];
 		for (int i = 0; i < framework.attackers[argument]._vector.size(); i++) {
+			if (Main::check_memory_limit_crossed()) {
+				cout << "//////////// Memory limit reached ///////////" << endl;
+				break;
+			}
+
 			uint32_t attacker = framework.attackers[argument]._vector[i];
 			if (framework.distance_to_query[attacker] > 0 || attacker == query) {
 				//attacker was already visited
@@ -54,6 +59,11 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 	num_attacker.resize(framework.num_args + 1);
 	//iterate through active arguments
 	for (int i = 0; i < active_args._vector.size(); i++) {
+		if (Main::check_memory_limit_crossed()) {
+			cout << "//////////// Memory limit reached ///////////" << endl;
+			break;
+		}
+
 		//check if argument is unattacked
 		if (framework.attackers[active_args._vector[i]]._vector.empty()) {
 			ls_unattacked_unprocessed.push_back(active_args._vector[i]);
@@ -67,6 +77,11 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 
 	//process list of unattacked arguments
 	for (list<uint32_t>::iterator mIter = ls_unattacked_unprocessed.begin(); mIter != ls_unattacked_unprocessed.end(); ++mIter) {
+		if (Main::check_memory_limit_crossed()) {
+			cout << "//////////// Memory limit reached ///////////" << endl;
+			break;
+		}
+
 		const auto &ua = *mIter;
 
 		//reject query if it gets attacked by argument of grounded extension
@@ -98,6 +113,11 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 			}
 
 			for (int j = 0; j < framework.victims[vua]._vector.size(); j++) {
+				if (Main::check_memory_limit_crossed()) {
+					cout << "//////////// Memory limit reached ///////////" << endl;
+					break;
+				}
+
 				uint32_t vvua = framework.victims[vua]._vector[j];
 
 				if (!out_reduct._bitset[vvua]) {

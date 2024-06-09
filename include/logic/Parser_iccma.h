@@ -10,6 +10,7 @@
 
 #include <omp.h>
 
+#include "../Main.h"
 #include "AF.h"
 
 extern "C" {
