@@ -135,6 +135,7 @@ int handleFile(filesystem::directory_entry file) {
 	else {
 		num_files_processed++;
 		cout << endl;
+		cout << "Processing: " << file.path().filename() << endl;
 	}
 
 	AF framework;
@@ -216,8 +217,28 @@ int main(int argc, char **argv)
 
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
 	{
-		//cout << "   " << *it << '\n';
-		handleFile(*it);
+		pid_t c_pid = fork();
+
+		if (c_pid == -1) {
+			perror("fork");
+			exit(EXIT_FAILURE);
+		}
+		else if (c_pid > 0) {
+			//  wait(nullptr); 
+			//cout << "printed from parent process " << getpid() << endl;
+			int status;
+			while (-1 == waitpid(c_pid, &status, 0));
+			//cout << "waited until child process ended" << endl;
+			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+				cerr << "Child process (pid " << c_pid << ") failed" << endl;
+			}
+		}
+		else {
+			//cout << "printed from child process " << getpid() << endl;
+			//cout << "   " << *it << '\n';
+			handleFile(*it);
+			exit(EXIT_SUCCESS);
+		}
 	}
 
 	cout << endl;
@@ -225,19 +246,3 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-/*===========================================================================================================================================================*/
-/*===========================================================================================================================================================*/
-
-bool Main::check_memory_limit_crossed() {
-	int current_Memory = get_mem_usage();
-	
-	if (current_Memory > get_instance().maxMemory) {
-		get_instance().maxMemory = current_Memory;
-		if (current_Memory > LIMIT_MEMORY_KB) {
-			//cout << "Memory allocated: " << current_Memory << "/" << get_instance().maxMemory << endl;											//DEBUG
-			return true;
-		}
-	}
-
-	return false;
-}

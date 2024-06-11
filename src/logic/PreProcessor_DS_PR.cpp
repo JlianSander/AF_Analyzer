@@ -14,11 +14,6 @@ static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query, cons
 		const auto &argument = *mIter;
 		uint32_t distance = framework.distance_to_query[argument];
 		for (int i = 0; i < framework.attackers[argument]._vector.size(); i++) {
-			if (Main::check_memory_limit_crossed()) {
-				cout << "//////////// Memory limit reached ///////////" << endl;
-				break;
-			}
-
 			uint32_t attacker = framework.attackers[argument]._vector[i];
 			if (framework.distance_to_query[attacker] > 0 || attacker == query) {
 				//attacker was already visited
@@ -59,11 +54,6 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 	num_attacker.resize(framework.num_args + 1);
 	//iterate through active arguments
 	for (int i = 0; i < active_args._vector.size(); i++) {
-		if (Main::check_memory_limit_crossed()) {
-			cout << "//////////// Memory limit reached ///////////" << endl;
-			break;
-		}
-
 		//check if argument is unattacked
 		if (framework.attackers[active_args._vector[i]]._vector.empty()) {
 			ls_unattacked_unprocessed.push_back(active_args._vector[i]);
@@ -77,11 +67,6 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 
 	//process list of unattacked arguments
 	for (list<uint32_t>::iterator mIter = ls_unattacked_unprocessed.begin(); mIter != ls_unattacked_unprocessed.end(); ++mIter) {
-		if (Main::check_memory_limit_crossed()) {
-			cout << "//////////// Memory limit reached ///////////" << endl;
-			break;
-		}
-
 		const auto &ua = *mIter;
 
 		//reject query if it gets attacked by argument of grounded extension
@@ -113,11 +98,6 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 			}
 
 			for (int j = 0; j < framework.victims[vua]._vector.size(); j++) {
-				if (Main::check_memory_limit_crossed()) {
-					cout << "//////////// Memory limit reached ///////////" << endl;
-					break;
-				}
-
 				uint32_t vvua = framework.victims[vua]._vector[j];
 
 				if (!out_reduct._bitset[vvua]) {
@@ -140,7 +120,6 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 	}
 
 	if (is_verbose) {
-		cout << file.filename() << "===== no final decision during preprocessing" << endl;
 		int num_args_reducted = num_args_initial - out_reduct._vector.size();
 		cout << file.filename() << "===== number of arguments reduced by grounded reduction: " << num_args_reducted << "/" << num_args_initial << endl;
 	}
@@ -174,6 +153,10 @@ pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitS
 	VectorBitSet active_args = calculate_cone_influence(framework, query, file, is_verbose);
 	
 	pre_proc_result result =  reduce_by_grounded(framework, active_args, query, out_reduct, num_query_grounded_contained, num_query_grounded_rejected, file, is_verbose);
+
+	if (is_verbose && result == pre_proc_result::unknown) {
+		cout << file.filename() << "===== no final decision during preprocessing" << endl;
+	}
 
 	return result;
 }

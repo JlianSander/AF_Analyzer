@@ -36,11 +36,6 @@ void ParserICCMA::parse_af(AF &framework, const std::filesystem::path file)
 	
 	//printf("Start parsing\n");																												//DEBUG
 	while (!input.eof()) {
-		if (Main::check_memory_limit_crossed()) {
-			cout << "//////////// Memory limit reached ///////////" << endl;
-			break;
-		}
-
 		getline(input, line);
 		if (line.length() == 0 || line[0] == '#') continue;
 		std::istringstream iss(line);

@@ -30,7 +30,9 @@
 #define MAIN_H
 
 #include <cstdio>
-#include <iostream>
+#include <iostream> 
+#include <unistd.h> 
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <filesystem>
@@ -83,23 +85,5 @@ const struct option longopts[] =
 /// <returns>0 iff the program exited without error. 1 otherwise.</returns>
 int main(int argc, char **argv);
 
-class Main {
-public:
-    static Main &get_instance()
-    {
-        static Main instance; 
-        return instance;
-    }
-
-	int maxMemory = 0;
-
-	static bool check_memory_limit_crossed();
-
-private:
-    Main() {} 
-
-public:
-    Main(Main const &) = delete;
-    void operator=(Main const &) = delete;
-};
+bool check_memory_limit_crossed();
 #endif
