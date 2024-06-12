@@ -44,7 +44,9 @@ extern "C" {
 }
 
 #include "../include/logic/AF.h"
-#include "../include/logic/Parser_iccma.h"
+#include "../include/logic/MessageDecoder.h"
+#include "../include/logic/MessageSystem.h"
+#include "../include/logic/Parser_ICCMA.h"
 #include "../include/logic/Solver_DS_PR.h"
 
 #include "../include/logic/Enums.h"
@@ -54,7 +56,7 @@ using recursive_directory_iterator = std::filesystem::recursive_directory_iterat
 constexpr auto PROGAMNAME = "AF_Analyzer";
 constexpr auto VERSIONNUMBER = "1.0";
 constexpr auto NUM_CORES = 0;
-constexpr auto LIMIT_MEMORY_KB = 30000000;
+constexpr auto LIMIT_MEMORY_KB = 25000000;
 
 static int version_flag = 0;
 static int usage_flag = 0;
@@ -65,6 +67,7 @@ static int num_query_selfattack = 0;
 static int num_query_no_attacker = 0;
 static int num_query_grounded_contained = 0;
 static int num_query_grounded_rejected = 0;
+static int num_not_solved_preprocessor = 0;
 static int num_files_processed = 0;
 
 const struct option longopts[] =
@@ -85,5 +88,4 @@ const struct option longopts[] =
 /// <returns>0 iff the program exited without error. 1 otherwise.</returns>
 int main(int argc, char **argv);
 
-bool check_memory_limit_crossed();
 #endif

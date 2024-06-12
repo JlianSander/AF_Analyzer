@@ -349,13 +349,11 @@ static bool check_rejection_parallel(uint32_t argument, AF &framework, VectorBit
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-bool Solver_DS_PR::solve(uint32_t argument, AF &framework, list<uint32_t> &proof_extension, uint8_t numCores, int &num_query_selfattack, int &num_query_no_attacker,
-	int &num_query_grounded_contained, int &num_query_grounded_rejected, const std::filesystem::path file, bool is_verbose) {
+bool Solver_DS_PR::solve(uint32_t argument, AF &framework, list<uint32_t> &proof_extension, uint8_t numCores, const std::filesystem::path file, bool is_verbose, int &code_msg) {
 	
 	VectorBitSet initial_reduct = VectorBitSet();
 
-	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, argument, initial_reduct, 
-		num_query_selfattack, num_query_no_attacker, num_query_grounded_contained, num_query_grounded_rejected, file, is_verbose);
+	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, argument, initial_reduct, file, is_verbose, code_msg);
 
 	//cout << "Reduct after preprocessing ";																										//DEBUG
 	//Printer::print_set(initial_reduct);																											//DEBUG

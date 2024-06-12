@@ -27,7 +27,9 @@ set(HEADERS
 	${INCLD_LOGIC}/Decoding.h 
 	${INCLD_LOGIC}/Encoding.h 
 	${INCLD_LOGIC}/Enums.h 
-	${INCLD_LOGIC}/Parser_iccma.h
+	${INCLD_LOGIC}/MessageDecoder.h
+	${INCLD_LOGIC}/MessageSystem.h
+	${INCLD_LOGIC}/Parser_ICCMA.h
 	${INCLD_LOGIC}/PreProcessor_DS_PR.h
 	${INCLD_LOGIC}/Prioritizer.h
 	${INCLD_LOGIC}/Reduct.h 
@@ -47,7 +49,9 @@ set(SRCFILES
 	${SRC_LOGIC}Decoding.cpp 
 	${SRC_LOGIC}Encoding.cpp 
 	${SRC_LOGIC}Enums.cpp
-	${SRC_LOGIC}Parser_iccma.cpp
+	${SRC_LOGIC}MessageDecoder.cpp
+	${SRC_LOGIC}MessageSystem.cpp
+	${SRC_LOGIC}Parser_ICCMA.cpp
 	${SRC_LOGIC}PreProcessor_DS_PR.cpp
 	${SRC_LOGIC}Prioritizer.cpp
 	${SRC_LOGIC}Reduct.cpp 
@@ -96,6 +100,13 @@ endif()
 target_link_libraries(${PROJECT_NAME} PUBLIC cadical)
 # Include the directory containing cadical.hpp
 target_include_directories(${PROJECT_NAME} PUBLIC ${CADICAL_DIR})
+
+
+
+#Real-time library for POSIX shared memory object
+#add_library(rt)
+target_link_libraries(${PROJECT_NAME} PUBLIC  "rt")
+#target_link_options(rt PRIVATE "LINKER:-as-needed")
 
 # further settings
 

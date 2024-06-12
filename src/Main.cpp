@@ -84,13 +84,12 @@ uint32_t static read_query(std::filesystem::__cxx11::directory_entry &file)
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void calculateSolution(uint32_t query, AF &framework, const std::filesystem::path file, bool is_verbose)
+int calculateSolution(uint32_t query, AF &framework, const std::filesystem::path file, bool is_verbose)
 {
 	list<uint32_t> proof_extension;
 	bool skept_accepted = false;
-
-	skept_accepted = Solver_DS_PR::solve(query, framework, proof_extension, NUM_CORES, 
-		num_query_selfattack, num_query_no_attacker, num_query_grounded_contained, num_query_grounded_rejected, file, is_verbose);
+	int code_msg;
+	skept_accepted = Solver_DS_PR::solve(query, framework, proof_extension, NUM_CORES, file, is_verbose, code_msg);
 	cout << (skept_accepted ? "YES" : "NO") << endl;
 	if (!skept_accepted)
 	{
@@ -107,15 +106,17 @@ void calculateSolution(uint32_t query, AF &framework, const std::filesystem::pat
 
 	//free allocated memory
 	proof_extension.clear();
+	return code_msg;
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void static start_pre_processor(uint32_t query, AF &framework, const std::filesystem::path file) {
+int static start_pre_processor(uint32_t query, AF &framework, const std::filesystem::path file) {
 	VectorBitSet initial_reduct = VectorBitSet();
-	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, query, initial_reduct, num_query_selfattack, num_query_no_attacker,
-		num_query_grounded_contained, num_query_grounded_rejected, file, true);
+	int code_msg;
+	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, query, initial_reduct, file, true, code_msg);
+	return code_msg;
 }
 
 
@@ -130,10 +131,9 @@ int handleFile(filesystem::directory_entry file) {
 
 	if (file_format != ".i23") {
 		//cerr << " Unsupported file format: " << file_format << endl;
-		return 1;
+		return -1;
 	}
 	else {
-		num_files_processed++;
 		cout << endl;
 		cout << "Processing: " << file.path().filename() << endl;
 	}
@@ -141,9 +141,8 @@ int handleFile(filesystem::directory_entry file) {
 	AF framework;
 	ParserICCMA::parse_af(framework, file.path());
 	uint32_t query = read_query(file);
-	start_pre_processor(query, framework, file.path());
+	return start_pre_processor(query, framework, file.path());
 	//calculateSolution(query, framework);
-	return 0;
 }
 
 /*===========================================================================================================================================================*/
@@ -154,6 +153,7 @@ static void print_statistics() {
 	cout << "Instances with unattacked queries: " << num_query_no_attacker << "/" << num_files_processed << endl;
 	cout << "Instances which were part of grounded extension: " << num_query_grounded_contained << "/" << num_files_processed << endl;
 	cout << "Instances which were rejected by grounded extension: " << num_query_grounded_rejected << "/" << num_files_processed << endl;
+	cout << "Instances not solved during preprocessing: " << num_not_solved_preprocessor << "/" << num_files_processed << endl;
 }
 
 /*===========================================================================================================================================================*/
@@ -215,28 +215,61 @@ int main(int argc, char **argv)
 	sort(v.begin(), v.end());				// sort, since directory iteration
 											// is not ordered on some file systems
 
+	cout << "Process " << getpid() << ": Init the initial value." << endl;
+	write_message(getpid(), 0);
+
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
 	{
-		pid_t c_pid = fork();
+		pid_t pid_other = fork();
+		pid_t pid_own = getpid();
 
-		if (c_pid == -1) {
+		if (pid_other == -1) {
 			perror("fork");
 			exit(EXIT_FAILURE);
 		}
-		else if (c_pid > 0) {
-			//  wait(nullptr); 
-			//cout << "printed from parent process " << getpid() << endl;
+		else if (pid_other != 0) {
+			//============== PARENT PROCESS ==============
+			cout << "Parent: " << pid_own << endl;
 			int status;
-			while (-1 == waitpid(c_pid, &status, 0));
+			while (-1 == waitpid(pid_other, &status, 0));
 			//cout << "waited until child process ended" << endl;
 			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-				cerr << "Child process (pid " << c_pid << ") failed" << endl;
+				cerr << "Child process (pid " << pid_other << ") failed" << endl;
+			}
+
+			int value;
+			if (read_message(pid_own, value) && value != 0) {
+				if (value > 0) {
+					//file was processed
+					//decode value received
+					MessageDecoder::decode_message(value, num_query_selfattack, num_query_no_attacker,
+						num_query_grounded_contained, num_query_grounded_rejected, num_not_solved_preprocessor);
+					//count file since returned value was not 0
+					num_files_processed++;
+				}
+				
+				//reset value
+				write_message(pid_own, 0);
+			}
+			else if (read_message(pid_own, value) && value == 0) {
+				cout << "Process " << pid_own << ": ERROR value was not set." << endl;
 			}
 		}
 		else {
-			//cout << "printed from child process " << getpid() << endl;
+			//============== CHILD PROCESS ==============
+			cout << "Child: " << pid_own << endl;
 			//cout << "   " << *it << '\n';
-			handleFile(*it);
+			int result = handleFile(*it);
+
+			int value;
+			if (read_message(pid_own, value) && value == 0) {
+				write_message(pid_own, result);
+			}
+			else if (read_message(pid_own, value) && value != 0) {
+				cout << "Process " << pid_own << ": ERROR value was not reset." << endl;
+			}
+
+			cout << "=========== End of process "<< pid_own << endl;
 			exit(EXIT_SUCCESS);
 		}
 	}

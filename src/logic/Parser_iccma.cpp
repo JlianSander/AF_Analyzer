@@ -1,4 +1,4 @@
-#include "../../include/logic/Parser_iccma.h"
+#include "../../include/logic/Parser_ICCMA.h"
 
 using namespace std;
 

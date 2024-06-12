@@ -43,8 +43,8 @@ static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query, cons
 /*===========================================================================================================================================================*/
 
 
-static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_args, uint32_t query, VectorBitSet &out_reduct
-	, int &num_query_grounded_contained, int &num_query_grounded_rejected, const std::filesystem::path file, bool is_verbose)
+static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_args, uint32_t query, VectorBitSet &out_reduct,
+	 const std::filesystem::path file, bool is_verbose, int &code_msg)
 {
 	uint32_t num_args_initial = active_args._vector.size();
 
@@ -74,7 +74,7 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 			if (is_verbose) {
 				cout << file.filename() << "------ query is in grounded extension" << endl;
 			}
-			num_query_grounded_contained++;
+			code_msg = 3;
 			return pre_proc_result::accepted;
 		}
 
@@ -84,7 +84,7 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 			if (is_verbose) {
 				cout << file.filename() << "------ query rejected by grounded extension" << endl;
 			}
-			num_query_grounded_rejected++;
+			code_msg = 4;
 			return pre_proc_result::rejected;
 		}
 
@@ -129,15 +129,14 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitSet &out_reduct, int &num_query_selfattack, int &num_query_no_attacker,
-	int &num_query_grounded_contained, int &num_query_grounded_rejected, const std::filesystem::path file, bool is_verbose) {
+pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitSet &out_reduct, const std::filesystem::path file, bool is_verbose, int &code_msg) {
 	
 	if (framework.victims[query]._bitset[query])
 	{
 		if (is_verbose) {
 			cout << file.filename() << "------ query attacks itself" << endl;
 		}
-		num_query_selfattack++;
+		code_msg = 1;
 		return pre_proc_result::rejected;
 	}
 
@@ -146,15 +145,16 @@ pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitS
 		if (is_verbose) {
 			cout << file.filename() << "------ query is unattacked" << endl;
 		}
-		num_query_no_attacker++;
+		code_msg = 2;
 		return pre_proc_result::accepted;
 	}
 
 	VectorBitSet active_args = calculate_cone_influence(framework, query, file, is_verbose);
 	
-	pre_proc_result result =  reduce_by_grounded(framework, active_args, query, out_reduct, num_query_grounded_contained, num_query_grounded_rejected, file, is_verbose);
+	pre_proc_result result =  reduce_by_grounded(framework, active_args, query, out_reduct, file, is_verbose, code_msg);
 
 	if (is_verbose && result == pre_proc_result::unknown) {
+		code_msg = 5;
 		cout << file.filename() << "===== no final decision during preprocessing" << endl;
 	}
 
