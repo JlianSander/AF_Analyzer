@@ -9,7 +9,7 @@ bool write_message(int pid, int value)
     ftruncate(shmFd, sizeof(message));
     message *msg_ptr = (message *)mmap(NULL, sizeof(message), PROT_READ | PROT_WRITE, MAP_SHARED, shmFd, 0);
 
-    printf("Process %d: Write %d\n", pid, value);
+    //printf("Process %d: Write %d\n", pid, value);                                                                                     //DEBUG
     msg_ptr->pid = pid;
     msg_ptr->counter = value;
 
@@ -33,12 +33,12 @@ bool read_message(int curr_pid, int &curr_value)
 
     if (msg_ptr->pid == curr_pid)
     {
-        printf("Process %d: No new msg available.\n", curr_pid);
+        //printf("Process %d: No new msg available.\n", curr_pid);                                                                      //DEBUG
         return false;
     }
     else
     {
-        printf("Process %d: Receive %d from PID %d.\n", curr_pid, msg_ptr->counter, msg_ptr->pid);
+        //printf("Process %d: Receive %d from PID %d.\n", curr_pid, msg_ptr->counter, msg_ptr->pid);                                     //DEBUG
         curr_value = msg_ptr->counter;
         munmap(msg_ptr, sizeof(message));
     }

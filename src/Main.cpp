@@ -153,11 +153,27 @@ static void print_statistics() {
 	cout << "Instances with unattacked queries: " << num_query_no_attacker << "/" << num_files_processed << endl;
 	cout << "Instances which were part of grounded extension: " << num_query_grounded_contained << "/" << num_files_processed << endl;
 	cout << "Instances which were rejected by grounded extension: " << num_query_grounded_rejected << "/" << num_files_processed << endl;
+	cout << "Instances which were terminated: " << num_files_terminated_preprocessor << "/" << num_files_processed << endl;
 	cout << "Instances not solved during preprocessing: " << num_not_solved_preprocessor << "/" << num_files_processed << endl;
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
+
+void decode(int msg_code)
+{
+	if (msg_code > 0) {
+		//file was processed
+		MessageDecoder::decode_message(msg_code, num_query_selfattack, num_query_no_attacker,
+			num_query_grounded_contained, num_query_grounded_rejected, num_files_terminated_preprocessor, num_not_solved_preprocessor);
+		//count file since returned value was not 0
+		num_files_processed++;
+	}
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
 
 int main(int argc, char **argv)
 {
@@ -215,7 +231,7 @@ int main(int argc, char **argv)
 	sort(v.begin(), v.end());				// sort, since directory iteration
 											// is not ordered on some file systems
 
-	cout << "Process " << getpid() << ": Init the initial value." << endl;
+	//cout << "Process " << getpid() << ": Init the initial value." << endl;												//DEBUT
 	write_message(getpid(), 0);
 
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
@@ -229,47 +245,43 @@ int main(int argc, char **argv)
 		}
 		else if (pid_other != 0) {
 			//============== PARENT PROCESS ==============
-			cout << "Parent: " << pid_own << endl;
-			int status;
+			//cout << "Parent: " << pid_own << endl;																		//DEBUT
+			int status, msg_code;
 			while (-1 == waitpid(pid_other, &status, 0));
 			//cout << "waited until child process ended" << endl;
 			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-				cerr << "Child process (pid " << pid_other << ") failed" << endl;
+				cerr << "Process " << pid_other << " terminated" << endl;
+				//count file for statistics
+				decode(6);
 			}
-
-			int value;
-			if (read_message(pid_own, value) && value != 0) {
-				if (value > 0) {
-					//file was processed
+			else {
+				if (read_message(pid_own, msg_code) && msg_code != 0) {
 					//decode value received
-					MessageDecoder::decode_message(value, num_query_selfattack, num_query_no_attacker,
-						num_query_grounded_contained, num_query_grounded_rejected, num_not_solved_preprocessor);
-					//count file since returned value was not 0
-					num_files_processed++;
+					decode(msg_code);
+
+					//reset value
+					write_message(pid_own, 0);
 				}
-				
-				//reset value
-				write_message(pid_own, 0);
-			}
-			else if (read_message(pid_own, value) && value == 0) {
-				cout << "Process " << pid_own << ": ERROR value was not set." << endl;
+				else if (read_message(pid_own, msg_code) && msg_code == 0) {
+					cout << "Process " << pid_own << ": ERROR value was not set." << endl;
+				}
 			}
 		}
 		else {
 			//============== CHILD PROCESS ==============
-			cout << "Child: " << pid_own << endl;
+			//cout << "Child: " << pid_own << endl;																				//DEBUG
 			//cout << "   " << *it << '\n';
 			int result = handleFile(*it);
 
-			int value;
-			if (read_message(pid_own, value) && value == 0) {
+			int msg_code;
+			if (read_message(pid_own, msg_code) && msg_code == 0) {
 				write_message(pid_own, result);
 			}
-			else if (read_message(pid_own, value) && value != 0) {
+			else if (read_message(pid_own, msg_code) && msg_code != 0) {
 				cout << "Process " << pid_own << ": ERROR value was not reset." << endl;
 			}
 
-			cout << "=========== End of process "<< pid_own << endl;
+			//cout << "=========== End of process "<< pid_own << endl;															//DEBUG
 			exit(EXIT_SUCCESS);
 		}
 	}

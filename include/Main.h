@@ -68,6 +68,7 @@ static int num_query_no_attacker = 0;
 static int num_query_grounded_contained = 0;
 static int num_query_grounded_rejected = 0;
 static int num_not_solved_preprocessor = 0;
+static int num_files_terminated_preprocessor = 0;
 static int num_files_processed = 0;
 
 const struct option longopts[] =
@@ -79,6 +80,8 @@ const struct option longopts[] =
 	{"d", required_argument, 0, 'd'},
 	{0}
 };
+
+void decode(int msg_code);
 
 /// <summary>
 /// This method is used to start the program.
