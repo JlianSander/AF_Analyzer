@@ -31,12 +31,17 @@ public:
 	/// <summary>
 	/// Checks if a specified argument is sceptically accepted.
 	/// </summary>
-	/// <param name="argument">The argument, which could be sceptical accepted or not.</param>
-	/// <param name="framework">The abstract argumentation framework, specifying the underlying attack relations between the arguments.</param>
+	/// <param name="argument"> The argument, which could be sceptical accepted or not.</param>
+	/// <param name="framework"> The abstract argumentation framework, specifying the underlying attack relations between the arguments.</param>
 	/// <param name="proof_extension"> Extension proving, that the argument cannot be sceptically accepted.</param>
 	/// <param name="numCores"> Number of cores requested to be used to solve the problem. Actual number can be lower depending on the OS scheduler.</param>
+	/// <param name="file"> File of the instance that is being processed.</param>
+	/// <param name="is_verbose"> If TRUE, then comments are added to the console about the execution.</param>
+	/// <param name="exec_code"> Code used in a message between processes to signal how the instance behaved during execution.</param>
+	/// <param name="limit_iterations"> Number of iterations that can be used to solved the instance at maximum</param>
 	/// <returns>TRUE iff the argument is sceptical accepted. FALSE otherwise.</returns>
-	static bool solve(uint32_t argument, AF &framework, list<uint32_t> &proof_extension, uint8_t numCores, const std::filesystem::path file, bool is_verbose, int &code_msg);
+	static bool solve(uint32_t argument, AF &framework, list<uint32_t> &proof_extension, uint8_t numCores, 
+		const std::filesystem::path file, bool is_verbose, int &exec_code, int limit_iterations);
 };
 
 #endif

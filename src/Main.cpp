@@ -88,9 +88,9 @@ int calculateSolution(uint32_t query, AF &framework, const std::filesystem::path
 {
 	list<uint32_t> proof_extension;
 	bool skept_accepted = false;
-	int code_msg;
-	skept_accepted = Solver_DS_PR::solve(query, framework, proof_extension, NUM_CORES, file, is_verbose, code_msg);
-	cout << (skept_accepted ? "YES" : "NO") << endl;
+	int exec_code;
+	skept_accepted = Solver_DS_PR::solve(query, framework, proof_extension, NUM_CORES, file, is_verbose, exec_code, LIMIT_ITERATIONS);
+	/*cout << (skept_accepted ? "YES" : "NO") << endl;
 	if (!skept_accepted)
 	{
 		cout << "w " << endl;
@@ -102,28 +102,29 @@ int calculateSolution(uint32_t query, AF &framework, const std::filesystem::path
 			proof_extension;
 			cout << endl;
 		}
-	}
+	}*/
 
 	//free allocated memory
 	proof_extension.clear();
-	return code_msg;
+	return exec_code;
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int static start_pre_processor(uint32_t query, AF &framework, const std::filesystem::path file) {
+int static start_pre_processor(uint32_t query, AF &framework, const std::filesystem::path file, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr) {
 	VectorBitSet initial_reduct = VectorBitSet();
-	int code_msg;
-	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, query, initial_reduct, file, true, code_msg);
-	return code_msg;
+	int exec_code;
+	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, query, initial_reduct, file, true, exec_code,
+		num_args_coi, num_args_reduc_coi_gr, num_args_gr);
+	return exec_code;
 }
 
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int handleFile(filesystem::directory_entry file) {
+int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr) {
 
 	//string file_path = file.path().stem().string();
 	//string file_format = file_path.substr(file_path.find_last_of(".") + 1, file_path.length() - file_path.find_last_of(".") - 1);
@@ -140,21 +141,32 @@ int handleFile(filesystem::directory_entry file) {
 
 	AF framework;
 	ParserICCMA::parse_af(framework, file.path());
+	num_args = framework.num_args;
 	uint32_t query = read_query(file);
-	return start_pre_processor(query, framework, file.path());
-	//calculateSolution(query, framework);
+	int result = start_pre_processor(query, framework, file.path(), num_args_coi, num_args_reduc_coi_gr, num_args_gr);
+	if (result == 5) {
+		//instance was not solved during preprocessing
+		result = calculateSolution(query, framework, file.path(), true);
+	}
+
+	return result;
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
 static void print_statistics() {
-	cout << "Instances with query self-attacks: " << num_query_selfattack << "/" << num_files_processed << endl;
-	cout << "Instances with unattacked queries: " << num_query_no_attacker << "/" << num_files_processed << endl;
-	cout << "Instances which were part of grounded extension: " << num_query_grounded_contained << "/" << num_files_processed << endl;
-	cout << "Instances which were rejected by grounded extension: " << num_query_grounded_rejected << "/" << num_files_processed << endl;
-	cout << "Instances which were terminated: " << num_files_terminated_preprocessor << "/" << num_files_processed << endl;
-	cout << "Instances not solved during preprocessing: " << num_not_solved_preprocessor << "/" << num_files_processed << endl;
+	cout << "[PreProcessor]Instances with query self-attacks: " << num_query_selfattack << "/" << num_files_processed << endl;
+	cout << "[PreProcessor]Instances with unattacked queries: " << num_query_no_attacker << "/" << num_files_processed << endl;
+	cout << "[PreProcessor]Instances where query was part of grounded extension: " << num_query_grounded_contained << "/" << num_files_processed << endl;
+	cout << "[PreProcessor]Instances where query was rejected by grounded extension: " << num_query_grounded_rejected << "/" << num_files_processed << endl;
+	cout << "[PreProcessor]Instances which were terminated: " << num_files_terminated_preprocessor << "/" << num_files_processed << endl;
+	cout << "[PreProcessor]Instances not solved during preprocessing: " << num_not_solved_preprocessor << "/" << num_files_processed << endl;
+	cout << "[PreProcessor]Average number of arguments reduced by cone of influence: " << num_args_coi_reducted_procent << "/100" << endl;
+	cout << "[PreProcessor]Average number of arguments reduced by grounded extension: " << num_args_gr_reducted_procent << "/100" << endl;
+	cout << "[PreProcessor]Average number of arguments reduced by grounded extension after calculating cone of influence: " 
+		<< num_args_coi_gr_reducted_procent << "/100" << endl;
+	cout << "[Solver]Instances solved during 1st iteration: " << num_files_solved_Fst_Iteration << "/" << num_not_solved_preprocessor << endl;
 }
 
 /*===========================================================================================================================================================*/
@@ -165,10 +177,27 @@ void decode(int msg_code)
 	if (msg_code > 0) {
 		//file was processed
 		MessageDecoder::decode_message(msg_code, num_query_selfattack, num_query_no_attacker,
-			num_query_grounded_contained, num_query_grounded_rejected, num_files_terminated_preprocessor, num_not_solved_preprocessor);
+			num_query_grounded_contained, num_query_grounded_rejected, num_files_terminated_preprocessor,
+			num_not_solved_preprocessor, num_files_solved_Fst_Iteration);
 		//count file since returned value was not 0
 		num_files_processed++;
 	}
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+void static updateProcent(int &base, double &cur_val_procent, int new_base, int new_val_absolut) {
+	double new_val_procent;
+	if (new_base != 0) {
+		new_val_procent = (new_val_absolut * 100.0) / new_base ;
+	}
+	else {
+		new_val_procent = 0;
+	}
+	cur_val_procent = (new_val_procent * new_base) / (new_base + base)
+		+ (cur_val_procent * base) / (new_base + base);
+	base += new_base;
 }
 
 /*===========================================================================================================================================================*/
@@ -232,7 +261,7 @@ int main(int argc, char **argv)
 											// is not ordered on some file systems
 
 	//cout << "Process " << getpid() << ": Init the initial value." << endl;												//DEBUT
-	write_message(getpid(), 0);
+	write_message(getpid(), 0, -1, -1, -1, -1);
 
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
 	{
@@ -246,7 +275,7 @@ int main(int argc, char **argv)
 		else if (pid_other != 0) {
 			//============== PARENT PROCESS ==============
 			//cout << "Parent: " << pid_own << endl;																		//DEBUT
-			int status, msg_code;
+			int status, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr;
 			while (-1 == waitpid(pid_other, &status, 0));
 			//cout << "waited until child process ended" << endl;
 			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
@@ -255,14 +284,23 @@ int main(int argc, char **argv)
 				decode(6);
 			}
 			else {
-				if (read_message(pid_own, msg_code) && msg_code != 0) {
+				if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
 					//decode value received
-					decode(msg_code);
-
+					decode(exec_code);
+					// update statistics
+					if (num_args_coi != 0) {
+						updateProcent(num_args_coi_base, num_args_coi_reducted_procent, num_args, num_args_coi);
+					}
+					if (num_args_gr != 0) {
+						updateProcent(num_args_gr_base, num_args_gr_reducted_procent, num_args, num_args_gr);
+					}
+					if (num_args_coi_gr != 0) {
+						updateProcent(num_args_coi_gr_base, num_args_coi_gr_reducted_procent, num_args - num_args_coi, num_args_coi_gr);
+					}
 					//reset value
-					write_message(pid_own, 0);
+					write_message(pid_own, 0, -1, -1, -1, -1);
 				}
-				else if (read_message(pid_own, msg_code) && msg_code == 0) {
+				else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
 					cout << "Process " << pid_own << ": ERROR value was not set." << endl;
 				}
 			}
@@ -271,13 +309,14 @@ int main(int argc, char **argv)
 			//============== CHILD PROCESS ==============
 			//cout << "Child: " << pid_own << endl;																				//DEBUG
 			//cout << "   " << *it << '\n';
-			int result = handleFile(*it);
+			int res_num_args = 0, res_num_args_coi = 0, res_num_args_coi_gr = 0, res_num_args_gr = 0;
+			int res_exec_code = handleFile(*it, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
 
-			int msg_code;
-			if (read_message(pid_own, msg_code) && msg_code == 0) {
-				write_message(pid_own, result);
+			int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr;
+			if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
+				write_message(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_gr, res_num_args_gr);
 			}
-			else if (read_message(pid_own, msg_code) && msg_code != 0) {
+			else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
 				cout << "Process " << pid_own << ": ERROR value was not reset." << endl;
 			}
 

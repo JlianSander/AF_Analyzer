@@ -16,12 +16,16 @@
 struct message
 {
     int pid;
-    int counter;
+    int exec_code;
+    int num_args;
+    int num_args_reduc_coi;
+    int num_args_reduc_coi_gr;
+    int num_args_reduc_gr;
 };
 
-bool read_message(int curr_pid, int &curr_value);
+bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_reduc_coi, int &num_args_reduc_coi_gr, int &num_args_reduc_gr);
 
-bool write_message(int pid, int value);
+bool write_message(int pid, int exec_code, int num_args, int num_args_reduc_coi, int num_args_reduc_coi_gr, int num_args_reduc_gr);
 
 
 #endif

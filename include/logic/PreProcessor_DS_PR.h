@@ -23,7 +23,8 @@ enum pre_proc_result { accepted, rejected, unknown };
 
 class PreProc_DS_PR {
 public:
-	//returns 1 if argument was accepted, 2 if argument was  
-	static pre_proc_result process(AF &framework, uint32_t argument, VectorBitSet &out_reduct, const std::filesystem::path file, bool is_verbose, int &code_msg);
+	
+	static pre_proc_result process(AF &framework, uint32_t argument, VectorBitSet &out_reduct, const std::filesystem::path file, bool is_verbose
+		, int &exec_code, int &num_args_reducted_coi, int &num_args_reducted_coi_gr, int &num_args_reducted_gr);
 };
 #endif

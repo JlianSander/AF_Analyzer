@@ -129,14 +129,15 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitSet &out_reduct, const std::filesystem::path file, bool is_verbose, int &code_msg) {
+pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitSet &out_reduct, const std::filesystem::path file, bool is_verbose
+	, int &exec_code, int &num_args_reducted_coi, int &num_args_reducted_coi_gr, int &num_args_reducted_gr) {
 	
 	if (framework.victims[query]._bitset[query])
 	{
 		if (is_verbose) {
 			cout << file.filename() << "------ query attacks itself" << endl;
 		}
-		code_msg = 1;
+		exec_code = 1;
 		return pre_proc_result::rejected;
 	}
 
@@ -145,17 +146,35 @@ pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitS
 		if (is_verbose) {
 			cout << file.filename() << "------ query is unattacked" << endl;
 		}
-		code_msg = 2;
+		exec_code = 2;
 		return pre_proc_result::accepted;
 	}
 
 	VectorBitSet active_args = calculate_cone_influence(framework, query, file, is_verbose);
+	num_args_reducted_coi = framework.num_args - active_args._vector.size();
 	
-	pre_proc_result result =  reduce_by_grounded(framework, active_args, query, out_reduct, file, is_verbose, code_msg);
+	pre_proc_result result =  reduce_by_grounded(framework, active_args, query, out_reduct, file, is_verbose, exec_code);
+	num_args_reducted_coi_gr = active_args._vector.size() - out_reduct._vector.size();
 
-	if (is_verbose && result == pre_proc_result::unknown) {
-		code_msg = 5;
-		cout << file.filename() << "===== no final decision during preprocessing" << endl;
+	{
+		//calculate reduced arguments by grounded extension alone
+		vector<uint32_t> active_args_vector;
+		vector<uint8_t> active_args_bitset(framework.num_args + 1, true);
+		for (int i = 1; i < framework.num_args + 1; i++) {
+			active_args_vector.push_back(i);
+		}
+
+		active_args = VectorBitSet(active_args_vector, active_args_bitset);
+		int not_used;
+		reduce_by_grounded(framework, active_args, query, out_reduct, file, false, not_used);
+		num_args_reducted_gr = active_args._vector.size() - out_reduct._vector.size();
+	}
+
+	if (result == pre_proc_result::unknown) {
+		exec_code = 5;
+		if (is_verbose) {
+			cout << file.filename() << "===== no final decision during preprocessing" << endl;
+		}
 	}
 
 	return result;

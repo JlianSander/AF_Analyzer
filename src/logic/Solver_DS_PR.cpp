@@ -16,8 +16,13 @@ static list<uint32_t> ExtendExtension(list<uint32_t> &extension_build, list<uint
 /*===========================================================================================================================================================*/
 
 static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, VectorBitSet &activeArgs, bool *isRejected,
-	list<uint32_t> &extension_build, list<uint32_t> &output_extension)	//, int *num_tasks, int *num_tasks_max
+	list<uint32_t> &extension_build, list<uint32_t> &output_extension, int &num_iterations, int limit_iterations)	//, int *num_tasks, int *num_tasks_max
 {
+	num_iterations++;
+	if (num_iterations > limit_iterations) {
+		return;
+	}
+	
 	int id = omp_get_thread_num();
 	bool isRejected_tmp = false;
 
@@ -244,9 +249,10 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 	priority(prio)
 		{
 			//printf("%d: ------- task started --- memory usage: %ld\n", omp_get_thread_num(), get_mem_usage());									//DEBUG
-			check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, new_extension_build, output_extension); //, num_tasks, num_tasks_max
+			check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, new_extension_build, 
+				output_extension, num_iterations, limit_iterations); //, num_tasks, num_tasks_max
 			new_extension_build.clear();
-			int tmp_num_tasks = 0;																												
+			//int tmp_num_tasks = 0;																												
 //#pragma atomic write
 //			*num_tasks = *num_tasks - 1;
 //#pragma omp flush(num_tasks)
@@ -287,10 +293,12 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-static bool check_rejection_parallel(uint32_t argument, AF &framework, VectorBitSet &active_args, list<uint32_t> &proof_extension, uint8_t numCores)
+static bool check_rejection_parallel(uint32_t argument, AF &framework, VectorBitSet &active_args, 
+	list<uint32_t> &proof_extension, uint8_t numCores, int &num_iterations, int limit_iterations)
 {
 	//float start_time = omp_get_wtime();																											//DEBUG
 	//long mem_base = get_mem_usage();																												//DEBUG
+	
 	bool *isRejected = NULL;
 	isRejected = (bool *)malloc(sizeof *isRejected);
 	if (isRejected == NULL) {
@@ -322,7 +330,7 @@ static bool check_rejection_parallel(uint32_t argument, AF &framework, VectorBit
 	}
 	*num_tasks_max = 0;*/
 
-#pragma omp parallel shared(argument, framework, active_args, isRejected, proof_extension)   //, num_tasks, num_tasks_max
+#pragma omp parallel shared(argument, framework, active_args, isRejected, proof_extension, num_iterations)   //, num_tasks, num_tasks_max
 #pragma omp single
 	{
 		//printf("Number of threads: %d\n", omp_get_num_threads());																					//DEBUG
@@ -331,7 +339,7 @@ static bool check_rejection_parallel(uint32_t argument, AF &framework, VectorBit
 
 		list<uint32_t> extension_build;
 
-		check_rejection_parallel_recursiv(argument, framework, active_args, isRejected, extension_build, proof_extension);					// , num_tasks, num_tasks_max
+		check_rejection_parallel_recursiv(argument, framework, active_args, isRejected, extension_build, proof_extension, num_iterations, limit_iterations);					// , num_tasks, num_tasks_max
 	}
 	
 	bool result = *isRejected;
@@ -349,28 +357,19 @@ static bool check_rejection_parallel(uint32_t argument, AF &framework, VectorBit
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-bool Solver_DS_PR::solve(uint32_t argument, AF &framework, list<uint32_t> &proof_extension, uint8_t numCores, const std::filesystem::path file, bool is_verbose, int &code_msg) {
+bool Solver_DS_PR::solve(uint32_t argument, AF &framework, list<uint32_t> &proof_extension, uint8_t numCores,
+	const std::filesystem::path file, bool is_verbose, int &exec_code, int limit_iterations) {
 	
 	VectorBitSet initial_reduct = VectorBitSet();
+	int num_iterations = 0;
+	bool result = check_rejection_parallel(argument, framework, initial_reduct, proof_extension, numCores, num_iterations, limit_iterations);
 
-	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, argument, initial_reduct, file, is_verbose, code_msg);
-
-	//cout << "Reduct after preprocessing ";																										//DEBUG
-	//Printer::print_set(initial_reduct);																											//DEBUG
-	//cout << endl;																																	//DEBUG
-
-	switch (result_preProcessor){
-
-		case accepted:
-			return true;
-
-		case rejected:
-			return false;
-
-		case unknown:
-			return !check_rejection_parallel(argument, framework, initial_reduct, proof_extension, numCores);
-
-		default:
-			return unknown;
+	if (num_iterations == 1) {
+		exec_code = 7;
+		if (is_verbose) {
+			cout << file.filename() << "===== solved in one iteration" << endl;
+		}
 	}
+
+	return result;
 }
