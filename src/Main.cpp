@@ -89,16 +89,23 @@ int calculateSolution(uint32_t query, AF &framework, VectorBitSet &initial_reduc
 	list<uint32_t> proof_extension;
 	bool skept_accepted = false;
 	int num_iterations = 0;
-	skept_accepted = Solver_DS_PR::solve(query, framework, initial_reduct, proof_extension, NUM_CORES, file, is_verbose, num_iterations, LIMIT_ITERATIONS);
+	int level_solution = Solver_DS_PR::solve(query, framework, initial_reduct, proof_extension, NUM_CORES, file, is_verbose, 
+		LIMIT_CALCULATION_LEVEL, num_iterations, LIMIT_ITERATIONS);
 	//free allocated memory
 	proof_extension.clear();
 
-	if (num_iterations == 1 && skept_accepted) {
+	if (level_solution == 1 && num_iterations == 1) {
 
 		if (is_verbose) {
 			cout << file.filename() << "===== solved in one iteration" << endl;
 		}
 		return 7;
+	}
+	else if (level_solution == 1 && num_iterations > 1) {
+		if (is_verbose) {
+			cout << file.filename() << "===== solved without recursivity but not as first calculated set" << endl;
+		}
+		return 8;
 	}
 	else {
 		return 5;
@@ -137,13 +144,13 @@ int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_co
 	num_args = framework.num_args;
 	uint32_t query = read_query(file);
 	VectorBitSet initial_reduct_solver = VectorBitSet();
-	int result = start_pre_processor(query, framework, file.path(), initial_reduct_solver, num_args_coi, num_args_reduc_coi_gr, num_args_gr);
-	if (result == 5) {
+	int exec_code = start_pre_processor(query, framework, file.path(), initial_reduct_solver, num_args_coi, num_args_reduc_coi_gr, num_args_gr);
+	if (exec_code == 5) {
 		//instance was not solved during preprocessing
-		result = calculateSolution(query, framework, initial_reduct_solver, file.path(), true);
+		exec_code = calculateSolution(query, framework, initial_reduct_solver, file.path(), true);
 	}
 
-	return result;
+	return exec_code;
 }
 
 /*===========================================================================================================================================================*/
@@ -160,7 +167,8 @@ static void print_statistics() {
 	cout << "[PreProcessor]Average number of arguments reduced by grounded extension: " << num_args_gr_reducted_procent << "/100" << endl;
 	cout << "[PreProcessor]Average number of arguments reduced by grounded extension after calculating cone of influence: " 
 		<< num_args_coi_gr_reducted_procent << "/100" << endl;
-	cout << "[Solver]Instances solved during 1st iteration: " << num_files_solved_Fst_Iteration << "/" << num_not_solved_preprocessor << endl;
+	cout << "[Solver]Instances solved during 1st iteration: " << num_files_solved_fst_iteration << "/" << num_not_solved_preprocessor << endl;
+	cout << "[Solver]Instances solved at 1st level: " << num_files_solved_fst_level << "/" << num_not_solved_preprocessor << endl;
 }
 
 /*===========================================================================================================================================================*/
@@ -172,7 +180,7 @@ void decode(int msg_code)
 		//file was processed
 		MessageDecoder::decode_message(msg_code, num_query_selfattack, num_query_no_attacker,
 			num_query_grounded_contained, num_query_grounded_rejected, num_files_terminated_preprocessor,
-			num_not_solved_preprocessor, num_files_solved_Fst_Iteration);
+			num_not_solved_preprocessor, num_files_solved_fst_iteration, num_files_solved_fst_level);
 		//count file since returned value was > 0
 		num_files_processed++;
 	}

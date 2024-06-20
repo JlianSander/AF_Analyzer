@@ -57,6 +57,7 @@ constexpr auto PROGAMNAME = "AF_Analyzer";
 constexpr auto VERSIONNUMBER = "1.0";
 constexpr auto NUM_CORES = 1;
 constexpr auto LIMIT_MEMORY_KB = 25000000;
+constexpr auto LIMIT_CALCULATION_LEVEL = 1;
 constexpr auto LIMIT_ITERATIONS = 1;
 
 static int version_flag = 0;
@@ -69,7 +70,6 @@ static int num_query_no_attacker = 0;
 static int num_query_grounded_contained = 0;
 static int num_query_grounded_rejected = 0;
 static int num_not_solved_preprocessor = 0;
-static int num_files_solved_Fst_Iteration = 0;
 static int num_files_terminated_preprocessor = 0;
 static int num_files_processed = 0;
 static int num_args_coi_base = 0;
@@ -78,6 +78,8 @@ static int num_args_gr_base = 0;
 static double num_args_gr_reducted_procent = 0;
 static int num_args_coi_gr_base = 0;
 static double num_args_coi_gr_reducted_procent = 0;
+static int num_files_solved_fst_iteration = 0;
+static int num_files_solved_fst_level = 0;
 
 const struct option longopts[] =
 {

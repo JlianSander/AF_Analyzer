@@ -14,17 +14,16 @@ static list<uint32_t> ExtendExtension(list<uint32_t> &extension_build, list<uint
 /*===========================================================================================================================================================*/
 
 static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, VectorBitSet &activeArgs, bool *isRejected,
-	list<uint32_t> &extension_build, list<uint32_t> &output_extension, int &num_iterations, int limit_iterations)	//, int *num_tasks, int *num_tasks_max
+	list<uint32_t> &extension_build, list<uint32_t> &output_extension, int parent_level, 
+	int &out_level_solution, int limit_level, int &out_num_iterations, int limit_iterations)	//, int *num_tasks, int *num_tasks_max
 {
-//#pragma atomic write
-	num_iterations++;
+	int own_level = parent_level + 1;
+	out_num_iterations++;
 
-	if (num_iterations > limit_iterations) {
+	if (own_level > limit_level || out_num_iterations > limit_iterations) {
 		return;
 	}
 	
-	int id = omp_get_thread_num();
-	bool isRejected_tmp = false;
 	VectorBitSet reduct = extension_build.empty() ? activeArgs.copy() : Reduct::get_reduct_set(activeArgs, framework, extension_build);																			//DEBUG
 
 	if (reduct._vector.size() < 2)
@@ -65,6 +64,7 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 				// an extension not containing the query argument, so that the argument gets sceptical rejected
 				
 				*isRejected = true;
+				out_level_solution = own_level;
 
 				free(isSolved);
 				free(isFirstCalculation);
@@ -86,6 +86,7 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 				// an extension not containing the query argument, so that the argument gets sceptical rejected
 				
 				*isRejected = true;
+				out_level_solution = own_level;
 
 				free(isSolved);
 				free(isFirstCalculation);
@@ -104,7 +105,8 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 
 		if (ScepticalCheck::check_rejection(argument, initial_set, framework))
 		{
-			*isRejected = true;			
+			*isRejected = true;
+			out_level_solution = own_level;
 			list<uint32_t> new_extension_build = ExtendExtension(extension_build, initial_set);	
 			output_extension = new_extension_build;
 
@@ -123,11 +125,9 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 		list<uint32_t> new_extension_build = ExtendExtension(extension_build, initial_set);		
 		initial_set.clear();
 		check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, new_extension_build,
-			output_extension, num_iterations, limit_iterations); //, num_tasks, num_tasks_max
+			output_extension, own_level, out_level_solution, limit_level, out_num_iterations, limit_iterations);
 		new_extension_build.clear();
-		reduct = extension_build.empty() ? activeArgs.copy() : Reduct::get_reduct_set(activeArgs, framework, extension_build);
-		isRejected_tmp = *isRejected;
-	} while (has_Solution && !isRejected_tmp);
+	} while (has_Solution && !*isRejected);
 
 	free(isSolved);
 	free(isFirstCalculation);
@@ -139,11 +139,15 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-static bool check_rejection_parallel(uint32_t argument, AF &framework, VectorBitSet &active_args, 
-	list<uint32_t> &proof_extension, uint8_t numCores, int &num_iterations, int limit_iterations)
-{	
+
+int Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeArgs, list<uint32_t> &proof_extension, uint8_t numCores,
+	const std::filesystem::path file, bool is_verbose, int limit_level, int &out_num_iterations, int limit_iterations) {
+	
+	int out_level_solution = -1;
+	int initial_lvl = 0;
+	out_num_iterations = 0;
 	bool *isRejected = NULL;
-	isRejected = (bool *)malloc(sizeof *isRejected);
+	isRejected = (bool *)malloc(sizeof * isRejected);
 	if (isRejected == NULL) {
 		printf("Memory allocation failed\n");
 		exit(1);
@@ -151,18 +155,7 @@ static bool check_rejection_parallel(uint32_t argument, AF &framework, VectorBit
 
 	*isRejected = false;
 	list<uint32_t> extension_build;
-	check_rejection_parallel_recursiv(argument, framework, active_args, isRejected, extension_build, proof_extension, num_iterations, limit_iterations);
-	bool result = *isRejected;
-	free(isRejected);
-	return result;
-}
-
-/*===========================================================================================================================================================*/
-/*===========================================================================================================================================================*/
-
-bool Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeArgs, list<uint32_t> &proof_extension, uint8_t numCores,
-	const std::filesystem::path file, bool is_verbose, int &num_iterations, int limit_iterations) {
-	
-	num_iterations = 0;
-	return !check_rejection_parallel(argument, framework, activeArgs, proof_extension, numCores, num_iterations, limit_iterations);
+	check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, extension_build, proof_extension, initial_lvl, 
+		out_level_solution, limit_level, out_num_iterations, limit_iterations);
+	return out_level_solution;
 }

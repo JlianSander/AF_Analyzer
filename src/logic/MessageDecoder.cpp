@@ -2,7 +2,7 @@
 
 void MessageDecoder::decode_message(int msg_value, int &num_query_selfattack, int &num_query_no_attacker,
 	int &num_query_grounded_contained, int &num_query_grounded_rejected, int &num_files_terminated_preprocessor, 
-	int &num_not_solved_preprocessor, int &num_files_solved_Fst_Iteration) {
+	int &num_not_solved_preprocessor, int &num_files_solved_fst_iteration, int &num_files_solved_fst_level) {
 
 	switch (msg_value) {
 	case 1:
@@ -24,7 +24,11 @@ void MessageDecoder::decode_message(int msg_value, int &num_query_selfattack, in
 		num_files_terminated_preprocessor++;
 		break;
 	case 7:
-		num_files_solved_Fst_Iteration++;
+		num_files_solved_fst_iteration++;
+		num_not_solved_preprocessor++;
+		break;
+	case 8:
+		num_files_solved_fst_level++;
 		num_not_solved_preprocessor++;
 		break;
 	default:
