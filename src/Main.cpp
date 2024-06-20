@@ -84,38 +84,33 @@ uint32_t static read_query(std::filesystem::__cxx11::directory_entry &file)
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int calculateSolution(uint32_t query, AF &framework, const std::filesystem::path file, bool is_verbose)
+int calculateSolution(uint32_t query, AF &framework, VectorBitSet &initial_reduct, const std::filesystem::path file, bool is_verbose)
 {
 	list<uint32_t> proof_extension;
 	bool skept_accepted = false;
-	int exec_code;
-	skept_accepted = Solver_DS_PR::solve(query, framework, proof_extension, NUM_CORES, file, is_verbose, exec_code, LIMIT_ITERATIONS);
-	/*cout << (skept_accepted ? "YES" : "NO") << endl;
-	if (!skept_accepted)
-	{
-		cout << "w " << endl;
-
-		if (!proof_extension.empty()) {
-			for (list<uint32_t>::iterator mIter = proof_extension.begin(); mIter != proof_extension.end(); ++mIter) {
-				cout << *mIter << " ";
-			}
-			proof_extension;
-			cout << endl;
-		}
-	}*/
-
+	int num_iterations = 0;
+	skept_accepted = Solver_DS_PR::solve(query, framework, initial_reduct, proof_extension, NUM_CORES, file, is_verbose, num_iterations, LIMIT_ITERATIONS);
 	//free allocated memory
 	proof_extension.clear();
-	return exec_code;
+
+	if (num_iterations == 1 && skept_accepted) {
+
+		if (is_verbose) {
+			cout << file.filename() << "===== solved in one iteration" << endl;
+		}
+		return 7;
+	}
+	else {
+		return 5;
+	}
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int static start_pre_processor(uint32_t query, AF &framework, const std::filesystem::path file, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr) {
-	VectorBitSet initial_reduct = VectorBitSet();
+int static start_pre_processor(uint32_t query, AF &framework, const std::filesystem::path file, VectorBitSet &out_final_reduct, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr) {
 	int exec_code;
-	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, query, initial_reduct, file, true, exec_code,
+	pre_proc_result result_preProcessor = PreProc_DS_PR::process(framework, query, out_final_reduct, file, true, exec_code,
 		num_args_coi, num_args_reduc_coi_gr, num_args_gr);
 	return exec_code;
 }
@@ -126,8 +121,6 @@ int static start_pre_processor(uint32_t query, AF &framework, const std::filesys
 
 int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr) {
 
-	//string file_path = file.path().stem().string();
-	//string file_format = file_path.substr(file_path.find_last_of(".") + 1, file_path.length() - file_path.find_last_of(".") - 1);
 	string file_format = file.path().extension();
 
 	if (file_format != ".i23") {
@@ -143,10 +136,11 @@ int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_co
 	ParserICCMA::parse_af(framework, file.path());
 	num_args = framework.num_args;
 	uint32_t query = read_query(file);
-	int result = start_pre_processor(query, framework, file.path(), num_args_coi, num_args_reduc_coi_gr, num_args_gr);
+	VectorBitSet initial_reduct_solver = VectorBitSet();
+	int result = start_pre_processor(query, framework, file.path(), initial_reduct_solver, num_args_coi, num_args_reduc_coi_gr, num_args_gr);
 	if (result == 5) {
 		//instance was not solved during preprocessing
-		result = calculateSolution(query, framework, file.path(), true);
+		result = calculateSolution(query, framework, initial_reduct_solver, file.path(), true);
 	}
 
 	return result;
@@ -179,7 +173,7 @@ void decode(int msg_code)
 		MessageDecoder::decode_message(msg_code, num_query_selfattack, num_query_no_attacker,
 			num_query_grounded_contained, num_query_grounded_rejected, num_files_terminated_preprocessor,
 			num_not_solved_preprocessor, num_files_solved_Fst_Iteration);
-		//count file since returned value was not 0
+		//count file since returned value was > 0
 		num_files_processed++;
 	}
 }
@@ -267,7 +261,7 @@ int main(int argc, char **argv)
 	{
 		pid_t pid_other = fork();
 		pid_t pid_own = getpid();
-
+		
 		if (pid_other == -1) {
 			perror("fork");
 			exit(EXIT_FAILURE);
@@ -308,7 +302,7 @@ int main(int argc, char **argv)
 		else {
 			//============== CHILD PROCESS ==============
 			//cout << "Child: " << pid_own << endl;																				//DEBUG
-			//cout << "   " << *it << '\n';
+			//cout << "   " << *it << '\n';																						//DEBUG
 			int res_num_args = 0, res_num_args_coi = 0, res_num_args_coi_gr = 0, res_num_args_gr = 0;
 			int res_exec_code = handleFile(*it, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
 
