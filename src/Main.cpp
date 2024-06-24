@@ -276,15 +276,15 @@ int main(int argc, char **argv)
 			perror("fork");
 			exit(EXIT_FAILURE);
 		}else if (pid_other == 0) {
-			//============== CHILD PROCESS ==============
-			//cout << "Child: " << pid_own << endl;																							//DEBUG
-			//cout << "   " << *it << '\n';																									//DEBUG
-			int res_num_args = 0, res_num_args_coi = 0, res_num_args_coi_gr = 0, res_num_args_gr = 0;
+		//	//============== CHILD PROCESS ==============
+		//	//cout << "Child: " << pid_own << endl;																							//DEBUG
+		//	//cout << "   " << *it << '\n';																									//DEBUG
+			int res_num_args = -1, res_num_args_coi = -1, res_num_args_coi_gr = -1, res_num_args_gr = -1;
 			int res_exec_code = handleFile(*it, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
 
 			int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr;
 			if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
-				//if (read_message(0, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {						//DEBUG
+			//if (read_message(0, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {						//DEBUG
 				write_message(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
 			}
 			else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
 				decode(6);
 			}else{
 				if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
-					//if (read_message(0, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0)	{				//DEBUG
+				//if (read_message(0, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0)	{				//DEBUG
 						//decode value received
 					decode(exec_code);
 					// update statistics
