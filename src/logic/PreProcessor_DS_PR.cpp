@@ -31,11 +31,6 @@ static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query, cons
 	}
 
 	VectorBitSet active_args = VectorBitSet(active_args_vector, active_args_bitset);
-
-	if (is_verbose) {
-		int num_args_reducted = framework.num_args - active_args._vector.size();
-		cout << file.filename() << "----- number of arguments reduced by cone of influence: " << num_args_reducted << "/" << framework.num_args << endl;
-	}
 	return active_args;
 }
 
@@ -46,6 +41,7 @@ static VectorBitSet calculate_cone_influence(AF &framework, uint32_t query, cons
 static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_args, uint32_t query, VectorBitSet &out_reduct,
 	 const std::filesystem::path file, bool is_verbose, int &code_msg)
 {
+	pre_proc_result result = pre_proc_result::unknown;
 	uint32_t num_args_initial = active_args._vector.size();
 
 	// fill list with unattacked arguments
@@ -72,20 +68,22 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 		//reject query if it gets attacked by argument of grounded extension
 		if( ua == query) {
 			if (is_verbose) {
-				cout << file.filename() << "------ query is in grounded extension" << endl;
+				cout << file.filename() << "oooo query is in grounded extension" << endl;
 			}
 			code_msg = 3;
-			return pre_proc_result::accepted;
+			//return pre_proc_result::accepted;
+			result = pre_proc_result::accepted;
 		}
 
 
 		//reject query if it gets attacked by argument of grounded extension
 		if (framework.victims[ua]._bitset[query]) {
 			if (is_verbose) {
-				cout << file.filename() << "------ query rejected by grounded extension" << endl;
+				cout << file.filename() << "oooo query rejected by grounded extension" << endl;
 			}
 			code_msg = 4;
-			return pre_proc_result::rejected;
+			//return pre_proc_result::rejected;
+			result = pre_proc_result::rejected;
 		}
 
 		//iterate through victims of the victims of ua
@@ -119,11 +117,8 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 		out_reduct = Reduct::get_reduct(out_reduct, framework, ua);
 	}
 
-	if (is_verbose) {
-		int num_args_reducted = num_args_initial - out_reduct._vector.size();
-		cout << file.filename() << "===== number of arguments reduced by grounded reduction: " << num_args_reducted << "/" << num_args_initial << endl;
-	}
-	return pre_proc_result::unknown;
+	//return pre_proc_result::unknown;
+	return result;
 }
 
 /*===========================================================================================================================================================*/
@@ -132,10 +127,14 @@ static pre_proc_result reduce_by_grounded(AF &framework, VectorBitSet &active_ar
 pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitSet &out_reduct, const std::filesystem::path file, bool is_verbose
 	, int &exec_code, int &num_args_reducted_coi, int &num_args_reducted_coi_gr, int &num_args_reducted_gr) {
 	
+	num_args_reducted_coi = -1;
+	num_args_reducted_coi_gr = -1;
+	num_args_reducted_gr = -1;
+
 	if (framework.victims[query]._bitset[query])
 	{
 		if (is_verbose) {
-			cout << file.filename() << "------ query attacks itself" << endl;
+			cout << file.filename() << "oooo query attacks itself" << endl;
 		}
 		exec_code = 1;
 		return pre_proc_result::rejected;
@@ -144,7 +143,7 @@ pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitS
 	if (framework.attackers[query]._vector.empty())
 	{
 		if (is_verbose) {
-			cout << file.filename() << "------ query is unattacked" << endl;
+			cout << file.filename() << "oooo query is unattacked" << endl;
 		}
 		exec_code = 2;
 		return pre_proc_result::accepted;
@@ -152,9 +151,14 @@ pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitS
 
 	VectorBitSet active_args = calculate_cone_influence(framework, query, file, is_verbose);
 	num_args_reducted_coi = framework.num_args - active_args._vector.size();
-	
+		
 	pre_proc_result result =  reduce_by_grounded(framework, active_args, query, out_reduct, file, is_verbose, exec_code);
 	num_args_reducted_coi_gr = active_args._vector.size() - out_reduct._vector.size();
+	
+	if (is_verbose) {
+		cout << file.filename() << "--- number of arguments reduced by cone of influence: " << num_args_reducted_coi << "/" << framework.num_args << endl;
+		cout << file.filename() << "--- number of arguments reduced by grounded reduction after cone of influence: " << num_args_reducted_coi_gr << "/" << active_args._vector.size() << endl;
+	}
 
 	{
 		//calculate reduced arguments by grounded extension alone
@@ -168,6 +172,9 @@ pre_proc_result PreProc_DS_PR::process(AF &framework, uint32_t query, VectorBitS
 		int not_used;
 		reduce_by_grounded(framework, active_args, query, out_reduct, file, false, not_used);
 		num_args_reducted_gr = active_args._vector.size() - out_reduct._vector.size();
+		if (is_verbose) {
+			cout << file.filename() << "--- number of arguments reduced by grounded reduction alone: " << num_args_reducted_gr << "/" << active_args._vector.size() << endl;
+		}
 	}
 
 	if (result == pre_proc_result::unknown) {

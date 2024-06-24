@@ -54,9 +54,7 @@ extern "C" {
 using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 
 constexpr auto PROGAMNAME = "AF_Analyzer";
-constexpr auto VERSIONNUMBER = "1.0";
-constexpr auto NUM_CORES = 1;
-constexpr auto LIMIT_MEMORY_KB = 25000000;
+constexpr auto VERSIONNUMBER = "1.1";
 constexpr auto LIMIT_CALCULATION_LEVEL = 1;
 constexpr auto LIMIT_ITERATIONS = 1;
 

@@ -107,8 +107,8 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 		{
 			*isRejected = true;
 			out_level_solution = own_level;
-			list<uint32_t> new_extension_build = ExtendExtension(extension_build, initial_set);	
-			output_extension = new_extension_build;
+			/*list<uint32_t> new_extension_build = ExtendExtension(extension_build, initial_set);	
+			output_extension = new_extension_build;*/
 
 			free(isSolved);
 			free(isFirstCalculation);
@@ -140,7 +140,7 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 /*===========================================================================================================================================================*/
 
 
-int Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeArgs, list<uint32_t> &proof_extension, uint8_t numCores,
+int Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeArgs, list<uint32_t> &proof_extension,
 	const std::filesystem::path file, bool is_verbose, int limit_level, int &out_num_iterations, int limit_iterations) {
 	
 	int out_level_solution = -1;

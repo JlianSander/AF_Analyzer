@@ -25,6 +25,7 @@ void MessageDecoder::decode_message(int msg_value, int &num_query_selfattack, in
 		break;
 	case 7:
 		num_files_solved_fst_iteration++;
+		num_files_solved_fst_level++;
 		num_not_solved_preprocessor++;
 		break;
 	case 8:
