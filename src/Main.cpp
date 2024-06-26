@@ -84,28 +84,35 @@ uint32_t static read_query(std::filesystem::__cxx11::directory_entry &file)
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int calculateSolution(uint32_t query, AF &framework, VectorBitSet &initial_reduct, const std::filesystem::path file, bool is_verbose)
+int calculateSolution(uint32_t query, AF &framework, VectorBitSet &initial_reduct, const std::filesystem::path file, int &out_is_solved, int &out_level, 
+	int &out_iterations, bool is_verbose)
 {
 	list<uint32_t> proof_extension;
 	bool skept_accepted = false;
-	int num_iterations = 0;
-	int level_solution = Solver_DS_PR::solve(query, framework, initial_reduct, proof_extension, file, is_verbose, 
-		LIMIT_CALCULATION_LEVEL, num_iterations, LIMIT_ITERATIONS);
+	Solver_DS_PR::solve(query, framework, initial_reduct, proof_extension, file, is_verbose, 
+		LIMIT_CALCULATION_LEVEL, out_is_solved, out_level, out_iterations, LIMIT_ITERATIONS);
+
 	//free allocated memory
 	proof_extension.clear();
 
-	if (level_solution == 1 && num_iterations == 1) {
+	if (out_level == 1 && out_iterations == 1) {
 
 		if (is_verbose) {
 			cout << file.filename() << "#### solved in one iteration" << endl;
 		}
 		return 7;
 	}
-	else if (level_solution == 1 && num_iterations > 1) {
+	else if (out_level == 1 && out_iterations > 1 && out_iterations < LIMIT_ITERATIONS) {
 		if (is_verbose) {
-			cout << file.filename() << "#### solved without recursivity but not as first calculated set" << endl;
+			cout << file.filename() << "#### solved on level 1 in iteration " << out_iterations << endl;
 		}
 		return 8;
+	}
+	else if (out_iterations >= LIMIT_ITERATIONS) {
+		if (is_verbose) {
+			cout << file.filename() << "#### reached limit of iterations" << endl;
+		}
+		return 5;
 	}
 	else {
 		return 5;
@@ -126,7 +133,8 @@ int static start_pre_processor(uint32_t query, AF &framework, const std::filesys
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr) {
+int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr, 
+	int &out_iterations, int &out_level, int &is_solved) {
 
 	string file_format = file.path().extension();
 
@@ -147,7 +155,7 @@ int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_co
 	int exec_code = start_pre_processor(query, framework, file.path(), initial_reduct_solver, num_args_coi, num_args_reduc_coi_gr, num_args_gr);
 	if (exec_code == 5) {
 		//instance was not solved during preprocessing
-		exec_code = calculateSolution(query, framework, initial_reduct_solver, file.path(), true);
+		exec_code = calculateSolution(query, framework, initial_reduct_solver, file.path(), out_iterations, out_level, is_solved, true);
 	}
 
 	return exec_code;
@@ -183,6 +191,10 @@ static void print_statistics(Statistics &stats) {
 	std::cout << std::setprecision(2);
 	cout << "[Solver]Instances solved with 1st calculated set: " << stats.num_files_solved_fst_iteration << "/" << stats.num_not_solved_preprocessor << endl;
 	cout << "[Solver]Instances solved at 1st level: " << stats.num_files_solved_fst_level << "/" << stats.num_not_solved_preprocessor << endl;
+	std::cout << std::setprecision(4);
+	cout << "[Solver]Average level of the calculated solution: " << stats.solve_lvl_avg << endl;
+	cout << "[Solver]Average numbers of iterations per solution: " << stats.solve_iterations_avg << endl;
+	std::cout << std::setprecision(2);
 	cout << endl;
 	cout << "Instances which were terminated: " << stats.num_files_terminated << "/" << stats.num_files_processed << endl;
 	cout << "Instances which were stopped due to time out: " << stats.num_files_timeout << "/" << stats.num_files_processed << endl;
@@ -204,7 +216,15 @@ void decode(Statistics &stats, int msg_code)
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void static updateProcent(int &base, double &cur_val_procent, int new_base, int new_val_absolut) {
+void static updateAverage(int &base, double &cur_val_procent, int new_base, double new_val_absolut, bool is_update_base) {
+	cur_val_procent = (new_val_absolut * new_base) / (new_base + base)
+		+ (cur_val_procent * base) / (new_base + base);
+	if (is_update_base) {
+		base += new_base;
+	}
+}
+
+void static updateAverageProcent(int &base, double &cur_val_procent, int new_base, int new_val_absolut, bool is_update_base) {
 	double new_val_procent;
 	if (new_base != 0) {
 		new_val_procent = (new_val_absolut * 100.0) / new_base ;
@@ -212,31 +232,36 @@ void static updateProcent(int &base, double &cur_val_procent, int new_base, int 
 	else {
 		new_val_procent = 0;
 	}
-	cur_val_procent = (new_val_procent * new_base) / (new_base + base)
-		+ (cur_val_procent * base) / (new_base + base);
-	base += new_base;
+	
+	updateAverage(base, cur_val_procent, new_base, new_val_procent, is_update_base);
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void readResultFromChild(Statistics &stats, pid_t pid_own, int &exec_code, int &num_args, int &num_args_coi, int &num_args_coi_gr, int &num_args_gr, pid_t pid_other)
+void readResultFromChild(Statistics &stats, pid_t pid_own, pid_t pid_other)
 {
-	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
+	int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations;
+
+	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations) && exec_code != 0) {
 		//decode value received
 		decode(stats, exec_code);
 		// update statistics
 		if (num_args_coi > -1) {
-			updateProcent(stats.num_args_coi_base, stats.num_args_coi_reducted_procent, num_args, num_args_coi);
+			updateAverageProcent(stats.num_args_coi_base, stats.num_args_coi_reducted_procent, num_args, num_args_coi, true);
 		}
 		if (num_args_gr > -1) {
-			updateProcent(stats.num_args_gr_base, stats.num_args_gr_reducted_procent, num_args, num_args_gr);
+			updateAverageProcent(stats.num_args_gr_base, stats.num_args_gr_reducted_procent, num_args, num_args_gr, true);
 		}
 		if (num_args_coi_gr > -1) {
-			updateProcent(stats.num_args_coi_gr_base, stats.num_args_coi_gr_reducted_procent, num_args - num_args_coi, num_args_coi_gr);
+			updateAverageProcent(stats.num_args_coi_gr_base, stats.num_args_coi_gr_reducted_procent, num_args - num_args_coi, num_args_coi_gr, true);
+		}
+		if (is_solved == 1) {
+			updateAverage(stats.num_files_solved, stats.solve_iterations_avg, 1, solve_iterations, false);
+			updateAverage(stats.num_files_solved, stats.solve_lvl_avg, 1, solve_lvl, true);
 		}
 	}
-	else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
+	else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations) && exec_code == 0) {
 		//cout << "Process " << pid_own << ": ERROR value was not set." << endl;
 		cerr << "Process " << pid_other << " terminated" << endl;
 		//count file for statistics
@@ -244,19 +269,20 @@ void readResultFromChild(Statistics &stats, pid_t pid_own, int &exec_code, int &
 	}
 
 	//reset value
-	write_message(pid_own, 0, -1, -1, -1, -1);
+	write_message(pid_own, 0, -1, -1, -1, -1, -1, -1, -1);
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void writeResultToParent(pid_t pid_own, int res_exec_code, int res_num_args, int res_num_args_coi, int res_num_args_coi_gr, int res_num_args_gr)
+void writeResultToParent(pid_t pid_own, int res_exec_code, int res_num_args, int res_num_args_coi, int res_num_args_coi_gr, int res_num_args_gr, 
+	int res_is_solved, int res_level, int res_iterations)
 {
-	int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr;
-	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
-		write_message(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
+	int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations;
+	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations) && exec_code == 0) {
+		write_message(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr, res_is_solved, res_level, res_iterations);
 	}
-	else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
+	else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations) && exec_code != 0) {
 		cout << "Process " << pid_own << ": ERROR value was not reset." << endl;
 	}
 }
@@ -321,7 +347,7 @@ int main(int argc, char **argv)
 											// is not ordered on some file systems
 
 	//cout << "Process " << getpid() << ": Init the initial value." << endl;																	//DEBUT
-	write_message(getpid(), 0, -1, -1, -1, -1);
+	write_message(getpid(), 0, -1, -1, -1, -1, -1, -1, -1);
 	Statistics stats;
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
 	{
@@ -333,18 +359,26 @@ int main(int argc, char **argv)
 			perror("fork failed");
 			exit(EXIT_FAILURE);
 		}else if (pid_other == 0) {
-		//	//============== CHILD PROCESS ==============
-		//	//cout << "Child: " << pid_own << endl;																								//DEBUG
-			int res_num_args = -1, res_num_args_coi = -1, res_num_args_coi_gr = -1, res_num_args_gr = -1;
-			int res_exec_code = handleFile(*it, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
-			writeResultToParent(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
+			//============== CHILD PROCESS ==============
+			//cout << "Child: " << pid_own << endl;																								//DEBUG
+			//init values
+			int res_num_args = -1, res_num_args_coi = -1, res_num_args_coi_gr = -1, res_num_args_gr = -1, 
+				res_is_solved = -1, res_solve_lvl = -1, res_solve_iterations = -1;
+
+			int res_exec_code = handleFile(*it, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
+				res_is_solved, res_solve_lvl, res_solve_iterations);
+
+			writeResultToParent(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
+				res_is_solved, res_solve_lvl, res_solve_iterations);
+			/*writeResultToParent(0, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
+				res_is_solved, res_solve_lvl, res_solve_iterations);*/
 
 			//cout << "=========== End of process " << pid_own << endl;																			//DEBUG
 			exit(EXIT_SUCCESS);
 		}else {
 			//============== PARENT PROCESS ==============
 			//cout << "Parent: " << pid_own << endl;																							//DEBUT
-			int status, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr;
+			int status;
 
 			signal(SIGALRM, alarm_handler);
 			signal(SIGCHLD, child_handler);
@@ -364,12 +398,13 @@ int main(int argc, char **argv)
 				}
 				else {
 					printf("alarm triggered, but child finished normally\n");
-					readResultFromChild(stats, pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, pid_other);
+					readResultFromChild(stats, pid_own, pid_other);
 				}
 			}else if(is_child_done) {
 				wait(NULL);
 				//cout << "waited until child process ended" << endl;
-				readResultFromChild(stats, pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, pid_other);
+				readResultFromChild(stats, pid_own, pid_other);
+				//readResultFromChild(stats, 0, pid_other);
 			}
 
 			is_time_over = 0;

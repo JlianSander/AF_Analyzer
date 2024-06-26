@@ -15,7 +15,7 @@ static list<uint32_t> ExtendExtension(list<uint32_t> &extension_build, list<uint
 
 bool CheckSolverProceed(bool *isRejected, int &out_num_iterations, int limit_iterations)
 {
-	return !*isRejected && out_num_iterations < limit_iterations;
+	return !*isRejected && out_num_iterations <= limit_iterations;
 }
 
 /*===========================================================================================================================================================*/
@@ -149,11 +149,10 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 /*===========================================================================================================================================================*/
 
 
-int Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeArgs, list<uint32_t> &proof_extension,
-	const std::filesystem::path file, bool is_verbose, int limit_level, int &out_num_iterations, int limit_iterations) {
+bool Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeArgs, list<uint32_t> &proof_extension,
+	const std::filesystem::path file, bool is_verbose, int limit_level, int &out_is_solved, int &out_level_solution, int &out_num_iterations, int limit_iterations) {
 	
-	int out_level_solution = -1;
-	int initial_lvl = 0;
+	out_level_solution = -1;
 	out_num_iterations = 0;
 	bool *isRejected = NULL;
 	isRejected = (bool *)malloc(sizeof * isRejected);
@@ -165,8 +164,7 @@ int Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeAr
 	*isRejected = false;
 	list<uint32_t> extension_build;
 	list<State_to_calculate> list_extensions_nxt_level;
-	check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, extension_build, proof_extension, list_extensions_nxt_level,
-		initial_lvl, out_level_solution, limit_level, out_num_iterations, limit_iterations);
+	list_extensions_nxt_level.push_back(State_to_calculate(extension_build, 0));
 
 	if (CheckSolverProceed(isRejected, out_num_iterations, limit_iterations)) {
 		for (list<State_to_calculate>::iterator mIter = list_extensions_nxt_level.begin(); mIter != list_extensions_nxt_level.end(); ++mIter) {
@@ -180,5 +178,7 @@ int Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeAr
 		}
 	}
 
-	return out_level_solution;
+	out_is_solved = out_level_solution <= limit_level && out_num_iterations <= limit_iterations;
+
+	return !*isRejected;
 }

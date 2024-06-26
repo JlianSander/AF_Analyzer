@@ -21,6 +21,9 @@ public:
 	double num_args_coi_gr_reducted_procent = 0;
 	int num_files_solved_fst_iteration = 0;
 	int num_files_solved_fst_level = 0;
+	int num_files_solved = 0;
+	double solve_lvl_avg = 0;
+	double solve_iterations_avg = 0;
 };
 
 #endif

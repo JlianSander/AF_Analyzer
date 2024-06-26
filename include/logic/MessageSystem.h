@@ -21,11 +21,16 @@ struct message
     int num_args_reduc_coi;
     int num_args_reduc_coi_gr;
     int num_args_reduc_gr;
+    int is_solved;
+    int solve_lvl;
+    int solve_iterations;
 };
 
-bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_reduc_coi, int &num_args_reduc_coi_gr, int &num_args_reduc_gr);
+bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_reduc_coi, int &num_args_reduc_coi_gr, int &num_args_reduc_gr, 
+    int &is_solved, int &solve_lvl, int &solve_iterations);
 
-bool write_message(int pid, int exec_code, int num_args, int num_args_reduc_coi, int num_args_reduc_coi_gr, int num_args_reduc_gr);
+bool write_message(int pid, int exec_code, int num_args, int num_args_reduc_coi, int num_args_reduc_coi_gr, int num_args_reduc_gr, 
+    int is_solved, int solve_lvl, int solve_iterations);
 
 
 #endif

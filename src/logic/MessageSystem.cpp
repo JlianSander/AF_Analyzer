@@ -3,7 +3,8 @@
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_reduc_coi, int &num_args_reduc_coi_gr, int &num_args_reduc_gr)
+bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_reduc_coi, int &num_args_reduc_coi_gr, int &num_args_reduc_gr, int &is_solved,
+    int &solve_lvl, int &solve_iterations)
 {
     int shmFd = shm_open(SHARED_OBJ_NAME, O_RDWR, S_IRUSR | S_IWUSR);
     ftruncate(shmFd, sizeof(message));
@@ -22,6 +23,9 @@ bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_red
         num_args_reduc_coi = msg_ptr->num_args_reduc_coi;
         num_args_reduc_coi_gr = msg_ptr->num_args_reduc_coi_gr;
         num_args_reduc_gr = msg_ptr->num_args_reduc_gr;
+        is_solved = msg_ptr->is_solved;
+        solve_lvl = msg_ptr->solve_lvl;
+        solve_iterations = msg_ptr->solve_iterations;
         munmap(msg_ptr, sizeof(message));
     }
 
@@ -33,7 +37,8 @@ bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_red
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-bool write_message(int pid, int exec_code, int num_args, int num_args_reduc_coi, int num_args_reduc_coi_gr, int num_args_reduc_gr)
+bool write_message(int pid, int exec_code, int num_args, int num_args_reduc_coi, int num_args_reduc_coi_gr, int num_args_reduc_gr, int is_solved,
+    int solve_lvl, int solve_iterations)
 {
     int shmFd = shm_open(SHARED_OBJ_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     ftruncate(shmFd, sizeof(message));
@@ -46,6 +51,9 @@ bool write_message(int pid, int exec_code, int num_args, int num_args_reduc_coi,
     msg_ptr->num_args_reduc_coi = num_args_reduc_coi;
     msg_ptr->num_args_reduc_coi_gr = num_args_reduc_coi_gr;
     msg_ptr->num_args_reduc_gr = num_args_reduc_gr;
+    msg_ptr->is_solved = is_solved;
+    msg_ptr->solve_lvl = solve_lvl;
+    msg_ptr->solve_iterations = solve_iterations;
 
     munmap(msg_ptr, sizeof(message));
 

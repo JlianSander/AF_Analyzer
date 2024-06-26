@@ -49,8 +49,8 @@ public:
 	/// <param name="out_num_iterations">Number of recursive calls until the solution was calculated.</param>
 	/// <param name="limit_iterations">Number of recursive calls that can be used to solve the instance at maximum.</param>
 	/// <returns>Depth of the level of the solution. -1 means no solution could be calculated within the specified limit.</returns>
-	static int solve(uint32_t argument, AF &framework, VectorBitSet &activeArgs, list<uint32_t> &proof_extension,
-		const std::filesystem::path file, bool is_verbose, int limit_level, int &out_num_iterations, int limit_iterations);
+	static bool solve(uint32_t argument, AF &framework, VectorBitSet &activeArgs, list<uint32_t> &proof_extension,
+		const std::filesystem::path file, bool is_verbose, int limit_level, int &out_is_solved, int &out_level_solution, int &out_num_iterations, int limit_iterations);
 };
 
 #endif
