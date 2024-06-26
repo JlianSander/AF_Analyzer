@@ -13,12 +13,19 @@ static list<uint32_t> ExtendExtension(list<uint32_t> &extension_build, list<uint
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
+bool CheckSolverProceed(bool *isRejected, int &out_num_iterations, int limit_iterations)
+{
+	return !*isRejected && out_num_iterations < limit_iterations;
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
 static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, VectorBitSet &activeArgs, bool *isRejected,
-	list<uint32_t> &extension_build, list<uint32_t> &output_extension, int parent_level, 
+	list<uint32_t> &extension_build, list<uint32_t> &output_extension, list<State_to_calculate> &list_extensions_nxt_level, int parent_level,
 	int &out_level_solution, int limit_level, int &out_num_iterations, int limit_iterations)	//, int *num_tasks, int *num_tasks_max
 {
 	int own_level = parent_level + 1;
-	out_num_iterations++;
 
 	if (own_level > limit_level || out_num_iterations > limit_iterations) {
 		return;
@@ -44,6 +51,8 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 	Encoding::add_clauses_nonempty_admissible_set(*solver, framework, reduct);
 	bool has_Solution = true;
 
+
+	
 	//iterate through initial sets
 	do {
 		if (*isSolved)
@@ -53,6 +62,8 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 
 		*isSolved = true;
 		has_Solution = (*solver).solve();
+		cout << "iteration ++" << endl;
+		out_num_iterations++;
 		if (!has_Solution)
 		{
 			//no more initial sets to calculate after this one
@@ -124,10 +135,8 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 
 		list<uint32_t> new_extension_build = ExtendExtension(extension_build, initial_set);		
 		initial_set.clear();
-		check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, new_extension_build,
-			output_extension, own_level, out_level_solution, limit_level, out_num_iterations, limit_iterations);
-		new_extension_build.clear();
-	} while (has_Solution && !*isRejected && out_num_iterations < limit_iterations);
+		list_extensions_nxt_level.push_back(State_to_calculate(new_extension_build, own_level));
+	} while (has_Solution && CheckSolverProceed(isRejected, out_num_iterations, limit_iterations));
 
 	free(isSolved);
 	free(isFirstCalculation);
@@ -155,7 +164,21 @@ int Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeAr
 
 	*isRejected = false;
 	list<uint32_t> extension_build;
-	check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, extension_build, proof_extension, initial_lvl, 
-		out_level_solution, limit_level, out_num_iterations, limit_iterations);
+	list<State_to_calculate> list_extensions_nxt_level;
+	check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, extension_build, proof_extension, list_extensions_nxt_level,
+		initial_lvl, out_level_solution, limit_level, out_num_iterations, limit_iterations);
+
+	if (CheckSolverProceed(isRejected, out_num_iterations, limit_iterations)) {
+		for (list<State_to_calculate>::iterator mIter = list_extensions_nxt_level.begin(); mIter != list_extensions_nxt_level.end(); ++mIter) {
+			State_to_calculate current_state = *mIter;
+			check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, current_state.extension,
+				proof_extension, list_extensions_nxt_level, current_state.parent_level, out_level_solution, limit_level, out_num_iterations, limit_iterations);
+
+			if (!CheckSolverProceed(isRejected, out_num_iterations, limit_iterations)) {
+				break;
+			}
+		}
+	}
+
 	return out_level_solution;
 }

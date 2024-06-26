@@ -24,6 +24,15 @@ extern "C" {
 
 using namespace std;
 
+class State_to_calculate {
+public:
+	list<uint32_t> extension;
+	int parent_level;
+
+	State_to_calculate(list<uint32_t> ext, int lvl) : extension(ext), parent_level(lvl) {}
+	~State_to_calculate() { extension.clear(); }
+};
+
 class Solver_DS_PR {
 public:
 
@@ -46,4 +55,4 @@ public:
 
 #endif
 
-
+static bool CheckSolverProceed(bool *isRejected, int &out_num_iterations, int limit_iterations);

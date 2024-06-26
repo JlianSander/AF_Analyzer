@@ -30,14 +30,17 @@
 #define MAIN_H
 
 #include <cstdio>
-#include <iostream> 
-#include <unistd.h> 
-#include <sys/wait.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <filesystem>
-#include <omp.h>
+#include <errno.h>
 #include <getopt.h>			// parsing commandline options
+#include <filesystem>
+#include <iostream> 
+#include <unistd.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 extern "C" {
 	#include "../include/util/MemoryWatchDog.h"
@@ -48,6 +51,7 @@ extern "C" {
 #include "../include/logic/MessageSystem.h"
 #include "../include/logic/Parser_ICCMA.h"
 #include "../include/logic/Solver_DS_PR.h"
+#include "../include/logic/Statistics.h"
 
 #include "../include/logic/Enums.h"
 
@@ -56,28 +60,16 @@ using recursive_directory_iterator = std::filesystem::recursive_directory_iterat
 constexpr auto PROGAMNAME = "AF_Analyzer";
 constexpr auto VERSIONNUMBER = "1.1";
 constexpr auto LIMIT_CALCULATION_LEVEL = 1;
-constexpr auto LIMIT_ITERATIONS = 1;
+constexpr auto LIMIT_ITERATIONS = 100;
+constexpr auto LIMIT_TIMEOUT = 20;
 
 static int version_flag = 0;
 static int usage_flag = 0;
 static int formats_flag = 0;
 static int problems_flag = 0;
 
-static int num_query_selfattack = 0;
-static int num_query_no_attacker = 0;
-static int num_query_grounded_contained = 0;
-static int num_query_grounded_rejected = 0;
-static int num_not_solved_preprocessor = 0;
-static int num_files_terminated_preprocessor = 0;
-static int num_files_processed = 0;
-static int num_args_coi_base = 0;
-static double num_args_coi_reducted_procent = 0;
-static int num_args_gr_base = 0;
-static double num_args_gr_reducted_procent = 0;
-static int num_args_coi_gr_base = 0;
-static double num_args_coi_gr_reducted_procent = 0;
-static int num_files_solved_fst_iteration = 0;
-static int num_files_solved_fst_level = 0;
+static int is_time_over = 0;
+static int is_child_done = 0;
 
 const struct option longopts[] =
 {
@@ -88,8 +80,6 @@ const struct option longopts[] =
 	{"d", required_argument, 0, 'd'},
 	{0}
 };
-
-void decode(int msg_code);
 
 /// <summary>
 /// This method is used to start the program.

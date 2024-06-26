@@ -156,35 +156,48 @@ int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_co
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-static void print_statistics() {
-	cout << "[PreProcessor]Instances with query self-attacks: " << num_query_selfattack << "/" << num_files_processed << endl;
-	cout << "[PreProcessor]Instances with unattacked queries: " << num_query_no_attacker << "/" << num_files_processed << endl;
-	cout << "[PreProcessor]Instances where query was part of grounded extension: " << num_query_grounded_contained << "/" << num_files_processed << endl;
-	cout << "[PreProcessor]Instances where query was rejected by grounded extension: " << num_query_grounded_rejected << "/" << num_files_processed << endl;
-	cout << "[PreProcessor]Instances which were terminated: " << num_files_terminated_preprocessor << "/" << num_files_processed << endl;
-	cout << "[PreProcessor]Instances not solved during preprocessing: " << num_not_solved_preprocessor << "/" << num_files_processed << endl;
-	std::cout << std::setprecision(4);
-	cout << "[PreProcessor]Average number of arguments reduced by cone of influence: " << num_args_coi_reducted_procent << "/100" << endl;
-	cout << "[PreProcessor]Average number of arguments reduced by grounded extension after calculating cone of influence: " 
-		<< num_args_coi_gr_reducted_procent << "/100" << endl;
-	cout << "[PreProcessor]Average number of arguments reduced by grounded extension alone: " << num_args_gr_reducted_procent << "/100" << endl;
-	std::cout << std::setprecision(2);
-	cout << "[Solver]Instances solved with 1st calculated set: " << num_files_solved_fst_iteration << "/" << num_not_solved_preprocessor << endl;
-	cout << "[Solver]Instances solved at 1st level: " << num_files_solved_fst_level << "/" << num_not_solved_preprocessor << endl;
+void child_handler(int sig)
+{
+	is_child_done = 1;
+}
+
+void alarm_handler(int sig)
+{
+	is_time_over = 1;
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void decode(int msg_code)
+static void print_statistics(Statistics &stats) {
+	cout << "[PreProcessor]Instances with query self-attacks: " << stats.num_query_selfattack << "/" << stats.num_files_processed << endl;
+	cout << "[PreProcessor]Instances with unattacked queries: " << stats.num_query_no_attacker << "/" << stats.num_files_processed << endl;
+	cout << "[PreProcessor]Instances where query was part of grounded extension: " << stats.num_query_grounded_contained << "/" << stats.num_files_processed << endl;
+	cout << "[PreProcessor]Instances where query was rejected by grounded extension: " << stats.num_query_grounded_rejected << "/" << stats.num_files_processed << endl;
+	cout << "[PreProcessor]Instances not solved during preprocessing: " << stats.num_not_solved_preprocessor << "/" << stats.num_files_processed << endl;
+	std::cout << std::setprecision(4);
+	cout << "[PreProcessor]Average number of arguments reduced by cone of influence: " << stats.num_args_coi_reducted_procent << "/100" << endl;
+	cout << "[PreProcessor]Average number of arguments reduced by grounded extension after calculating cone of influence: " 
+		<< stats.num_args_coi_gr_reducted_procent << "/100" << endl;
+	cout << "[PreProcessor]Average number of arguments reduced by grounded extension alone: " << stats.num_args_gr_reducted_procent << "/100" << endl;
+	std::cout << std::setprecision(2);
+	cout << "[Solver]Instances solved with 1st calculated set: " << stats.num_files_solved_fst_iteration << "/" << stats.num_not_solved_preprocessor << endl;
+	cout << "[Solver]Instances solved at 1st level: " << stats.num_files_solved_fst_level << "/" << stats.num_not_solved_preprocessor << endl;
+	cout << endl;
+	cout << "Instances which were terminated: " << stats.num_files_terminated << "/" << stats.num_files_processed << endl;
+	cout << "Instances which were stopped due to time out: " << stats.num_files_timeout << "/" << stats.num_files_processed << endl;
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+void decode(Statistics &stats, int msg_code)
 {
 	if (msg_code > 0) {
 		//file was processed
-		MessageDecoder::decode_message(msg_code, num_query_selfattack, num_query_no_attacker,
-			num_query_grounded_contained, num_query_grounded_rejected, num_files_terminated_preprocessor,
-			num_not_solved_preprocessor, num_files_solved_fst_iteration, num_files_solved_fst_level);
+		MessageDecoder::decode_message(stats, msg_code);
 		//count file since returned value was > 0
-		num_files_processed++;
+		stats.num_files_processed++;
 	}
 }
 
@@ -207,6 +220,49 @@ void static updateProcent(int &base, double &cur_val_procent, int new_base, int 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
+void readResultFromChild(Statistics &stats, pid_t pid_own, int &exec_code, int &num_args, int &num_args_coi, int &num_args_coi_gr, int &num_args_gr, pid_t pid_other)
+{
+	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
+		//decode value received
+		decode(stats, exec_code);
+		// update statistics
+		if (num_args_coi > -1) {
+			updateProcent(stats.num_args_coi_base, stats.num_args_coi_reducted_procent, num_args, num_args_coi);
+		}
+		if (num_args_gr > -1) {
+			updateProcent(stats.num_args_gr_base, stats.num_args_gr_reducted_procent, num_args, num_args_gr);
+		}
+		if (num_args_coi_gr > -1) {
+			updateProcent(stats.num_args_coi_gr_base, stats.num_args_coi_gr_reducted_procent, num_args - num_args_coi, num_args_coi_gr);
+		}
+	}
+	else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
+		//cout << "Process " << pid_own << ": ERROR value was not set." << endl;
+		cerr << "Process " << pid_other << " terminated" << endl;
+		//count file for statistics
+		decode(stats, 6);
+	}
+
+	//reset value
+	write_message(pid_own, 0, -1, -1, -1, -1);
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
+
+void writeResultToParent(pid_t pid_own, int res_exec_code, int res_num_args, int res_num_args_coi, int res_num_args_coi_gr, int res_num_args_gr)
+{
+	int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr;
+	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
+		write_message(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
+	}
+	else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
+		cout << "Process " << pid_own << ": ERROR value was not reset." << endl;
+	}
+}
+
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
 
 int main(int argc, char **argv)
 {
@@ -266,70 +322,63 @@ int main(int argc, char **argv)
 
 	//cout << "Process " << getpid() << ": Init the initial value." << endl;																	//DEBUT
 	write_message(getpid(), 0, -1, -1, -1, -1);
+	Statistics stats;
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
 	{
 		pid_t pid_other = fork();
-		//pid_t pid_other = getpid();																										//DEBUG
+		//pid_t pid_other = getpid();																											//DEBUG
 		pid_t pid_own = getpid();
 
 		if (pid_other == -1) {
-			perror("fork");
+			perror("fork failed");
 			exit(EXIT_FAILURE);
 		}else if (pid_other == 0) {
 		//	//============== CHILD PROCESS ==============
-		//	//cout << "Child: " << pid_own << endl;																							//DEBUG
-		//	//cout << "   " << *it << '\n';																									//DEBUG
+		//	//cout << "Child: " << pid_own << endl;																								//DEBUG
 			int res_num_args = -1, res_num_args_coi = -1, res_num_args_coi_gr = -1, res_num_args_gr = -1;
 			int res_exec_code = handleFile(*it, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
+			writeResultToParent(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
 
-			int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr;
-			if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
-			//if (read_message(0, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {						//DEBUG
-				write_message(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr);
-			}
-			else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
-				cout << "Process " << pid_own << ": ERROR value was not reset." << endl;
-			}
-
-			//cout << "=========== End of process " << pid_own << endl;																		//DEBUG
+			//cout << "=========== End of process " << pid_own << endl;																			//DEBUG
 			exit(EXIT_SUCCESS);
 		}else {
 			//============== PARENT PROCESS ==============
 			//cout << "Parent: " << pid_own << endl;																							//DEBUT
 			int status, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr;
-			while (-1 == waitpid(pid_other, &status, 0));
-			//cout << "waited until child process ended" << endl;
-			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-				cerr << "Process " << pid_other << " terminated" << endl;
-				//count file for statistics
-				decode(6);
-			}else{
-				if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0) {
-				//if (read_message(0, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code != 0)	{				//DEBUG
-						//decode value received
-					decode(exec_code);
-					// update statistics
-					if (num_args_coi > -1) {
-						updateProcent(num_args_coi_base, num_args_coi_reducted_procent, num_args, num_args_coi);
-					}
-					if (num_args_gr > -1) {
-						updateProcent(num_args_gr_base, num_args_gr_reducted_procent, num_args, num_args_gr);
-					}
-					if (num_args_coi_gr > -1) {
-						updateProcent(num_args_coi_gr_base, num_args_coi_gr_reducted_procent, num_args - num_args_coi, num_args_coi_gr);
-					}
-					//reset value
-					write_message(pid_own, 0, -1, -1, -1, -1);
+
+			signal(SIGALRM, alarm_handler);
+			signal(SIGCHLD, child_handler);
+
+			alarm(LIMIT_TIMEOUT);  // install an alarm to be fired after LIMIT_TIMEOUT
+			pause();
+
+			if (is_time_over) {
+				printf("TIME OUT\n");
+				int result = waitpid(pid_other, NULL, WNOHANG);
+				if (result == 0) {
+					// child still running, so kill it
+					kill(pid_other, 9);
+					wait(NULL);
+					//count file for statistics
+					decode(stats, 9);
 				}
-				else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr) && exec_code == 0) {
-					cout << "Process " << pid_own << ": ERROR value was not set." << endl;
+				else {
+					printf("alarm triggered, but child finished normally\n");
+					readResultFromChild(stats, pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, pid_other);
 				}
+			}else if(is_child_done) {
+				wait(NULL);
+				//cout << "waited until child process ended" << endl;
+				readResultFromChild(stats, pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, pid_other);
 			}
+
+			is_time_over = 0;
+			is_child_done = 0;
 		}
 	}
 
 	cout << endl;
-	print_statistics();
+	print_statistics(stats);
 	return 0;
 }
 
