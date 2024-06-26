@@ -127,7 +127,7 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 		check_rejection_parallel_recursiv(argument, framework, activeArgs, isRejected, new_extension_build,
 			output_extension, own_level, out_level_solution, limit_level, out_num_iterations, limit_iterations);
 		new_extension_build.clear();
-	} while (has_Solution && !*isRejected);
+	} while (has_Solution && !*isRejected && out_num_iterations < limit_iterations);
 
 	free(isSolved);
 	free(isFirstCalculation);
