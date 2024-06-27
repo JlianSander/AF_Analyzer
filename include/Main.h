@@ -60,8 +60,8 @@ using recursive_directory_iterator = std::filesystem::recursive_directory_iterat
 constexpr auto PROGAMNAME = "AF_Analyzer";
 constexpr auto VERSIONNUMBER = "1.1";
 constexpr auto LIMIT_CALCULATION_LEVEL = 1;
-constexpr auto LIMIT_ITERATIONS = 100;
-constexpr auto LIMIT_TIMEOUT = 20;
+constexpr auto LIMIT_ITERATIONS = 50000;
+constexpr auto LIMIT_TIMEOUT = 43;
 
 static int version_flag = 0;
 static int usage_flag = 0;

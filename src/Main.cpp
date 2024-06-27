@@ -216,9 +216,9 @@ void decode(Statistics &stats, int msg_code)
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void static updateAverage(int &base, double &cur_val_procent, int new_base, double new_val_absolut, bool is_update_base) {
-	cur_val_procent = (new_val_absolut * new_base) / (new_base + base)
-		+ (cur_val_procent * base) / (new_base + base);
+void static updateAverage(int &base, double &current_val, int new_base, double new_val, bool is_update_base) {
+	current_val = (new_val * new_base) / (new_base + base)
+		+ (current_val * base) / (new_base + base);
 	if (is_update_base) {
 		base += new_base;
 	}
@@ -352,7 +352,6 @@ int main(int argc, char **argv)
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
 	{
 		pid_t pid_other = fork();
-		//pid_t pid_other = getpid();																											//DEBUG
 		pid_t pid_own = getpid();
 
 		if (pid_other == -1) {
@@ -370,8 +369,6 @@ int main(int argc, char **argv)
 
 			writeResultToParent(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
 				res_is_solved, res_solve_lvl, res_solve_iterations);
-			/*writeResultToParent(0, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
-				res_is_solved, res_solve_lvl, res_solve_iterations);*/
 
 			//cout << "=========== End of process " << pid_own << endl;																			//DEBUG
 			exit(EXIT_SUCCESS);
@@ -404,12 +401,21 @@ int main(int argc, char **argv)
 				wait(NULL);
 				//cout << "waited until child process ended" << endl;
 				readResultFromChild(stats, pid_own, pid_other);
-				//readResultFromChild(stats, 0, pid_other);
 			}
 
 			is_time_over = 0;
 			is_child_done = 0;
 		}
+
+		
+		/*int res_num_args = -1, res_num_args_coi = -1, res_num_args_coi_gr = -1, res_num_args_gr = -1,
+			res_is_solved = -1, res_solve_lvl = -1, res_solve_iterations = -1;
+
+		int res_exec_code = handleFile(*it, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
+			res_is_solved, res_solve_lvl, res_solve_iterations);
+		writeResultToParent(1, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
+			res_is_solved, res_solve_lvl, res_solve_iterations);
+		readResultFromChild(stats, 0, 1);*/
 	}
 
 	cout << endl;

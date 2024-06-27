@@ -62,7 +62,6 @@ static void check_rejection_parallel_recursiv(uint32_t argument, AF &framework, 
 
 		*isSolved = true;
 		has_Solution = (*solver).solve();
-		cout << "iteration ++" << endl;
 		out_num_iterations++;
 		if (!has_Solution)
 		{
@@ -178,7 +177,7 @@ bool Solver_DS_PR::solve(uint32_t argument, AF &framework, VectorBitSet &activeA
 		}
 	}
 
-	out_is_solved = out_level_solution <= limit_level && out_num_iterations <= limit_iterations;
+	out_is_solved = out_level_solution > -1 && out_level_solution <= limit_level && out_num_iterations <= limit_iterations;
 
 	return !*isRejected;
 }
