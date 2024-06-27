@@ -84,7 +84,7 @@ uint32_t static read_query(std::filesystem::__cxx11::directory_entry &file)
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int calculateSolution(uint32_t query, AF &framework, VectorBitSet &initial_reduct, const std::filesystem::path file, int &out_is_solved, int &out_level, 
+int calculate_solution(uint32_t query, AF &framework, VectorBitSet &initial_reduct, const std::filesystem::path file, int &out_is_solved, int &out_level, 
 	int &out_iterations, bool is_verbose)
 {
 	list<uint32_t> proof_extension;
@@ -130,13 +130,34 @@ int static start_pre_processor(uint32_t query, AF &framework, const std::filesys
 }
 
 
+void write_csv_line(filesystem::directory_entry file, string csv_file_path, int exec_code, bool is_solved_preproc, int num_args, int num_args_coi, int num_args_reduc_coi_gr, int num_args_gr,
+	int iterations, int level, bool is_solved, bool is_timeout, bool is_terminated) {
+
+	std::ofstream csv_file;
+	csv_file.open(csv_file_path, std::ios_base::app);
+	csv_file << file.path().filename() << "," 
+		<< to_string(exec_code) << "," 
+		<< to_string(is_solved_preproc) << "," 
+		<< (num_args != -1 ? to_string(num_args) : "" ) << "," 
+		<< (num_args_coi != -1 ? to_string(num_args_coi) : "") << ","
+		<< (num_args_gr != -1 ? to_string(num_args_gr) : "") << ","
+		<< (num_args_reduc_coi_gr != -1 ? to_string(num_args_reduc_coi_gr) : "") << ","
+		<< to_string(is_solved) << "," 
+		<< (iterations != -1 ? to_string(iterations) : "") << ","
+		<< (level != -1 ? to_string(level) : "") << ","
+		<< to_string(is_timeout) << "," 
+		<< to_string(is_terminated) <<"\n";
+	csv_file.close();
+}
+
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr, 
+int handle_file(filesystem::directory_entry file, string csv_file_path, int &num_args, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr, 
 	int &out_iterations, int &out_level, int &is_solved) {
 
 	string file_format = file.path().extension();
+	bool is_solved_preproc = false;
 
 	if (file_format != ".i23") {
 		//cerr << " Unsupported file format: " << file_format << endl;
@@ -153,10 +174,14 @@ int handleFile(filesystem::directory_entry file, int &num_args, int &num_args_co
 	uint32_t query = read_query(file);
 	VectorBitSet initial_reduct_solver = VectorBitSet();
 	int exec_code = start_pre_processor(query, framework, file.path(), initial_reduct_solver, num_args_coi, num_args_reduc_coi_gr, num_args_gr);
+	is_solved_preproc = exec_code != 5;
 	if (exec_code == 5) {
 		//instance was not solved during preprocessing
-		exec_code = calculateSolution(query, framework, initial_reduct_solver, file.path(), out_iterations, out_level, is_solved, true);
+		exec_code = calculate_solution(query, framework, initial_reduct_solver, file.path(), out_iterations, out_level, is_solved, true);
 	}
+
+	write_csv_line(file, csv_file_path, exec_code, is_solved_preproc, num_args, num_args_coi, num_args_reduc_coi_gr, num_args_gr,
+		out_iterations, out_level, is_solved, false, false);
 
 	return exec_code;
 }
@@ -239,7 +264,7 @@ void static updateAverageProcent(int &base, double &cur_val_procent, int new_bas
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void readResultFromChild(Statistics &stats, pid_t pid_own, pid_t pid_other)
+void readResultFromChild(filesystem::directory_entry file, string csv_file_path, Statistics &stats, pid_t pid_own, pid_t pid_other)
 {
 	int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations;
 
@@ -266,6 +291,7 @@ void readResultFromChild(Statistics &stats, pid_t pid_own, pid_t pid_other)
 		cerr << "Process " << pid_other << " terminated" << endl;
 		//count file for statistics
 		decode(stats, 6);
+		write_csv_line(file, csv_file_path, 6, false, -1, -1, -1, -1, -1, -1, false, false, true);
 	}
 
 	//reset value
@@ -299,7 +325,7 @@ int main(int argc, char **argv)
 
 	int option_index = 0;
 	int opt = 0;
-	string dir;
+	string dir, csv_file_path;
 
 	while ((opt = getopt_long_only(argc, argv, "", longopts, &option_index)) != -1) {
 		switch (opt) {
@@ -307,6 +333,9 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 			dir = optarg;
+			break;
+		case 'c':
+			csv_file_path = optarg;
 			break;
 		default:
 			return 1;
@@ -337,7 +366,13 @@ int main(int argc, char **argv)
 		cerr << argv[0] << ": Input directory must be specified via -d flag\n";
 		return 1;
 	}
+	//prepare csv-file
+	std::ofstream csv_file;
+	csv_file.open(csv_file_path);
+	csv_file << "File,Execution_Code,Solved_Preprocessor,Number_Args,Args_reducted_COI, Args_reducted_GR,Args_reducted_COI_GR,Is_Solved,Num_Iterations,Level_Solution,Is_TimeOut,Is_Terminated,\n";
+	csv_file.close();
 
+	//prepare iterating through directory
 	typedef vector<filesystem::directory_entry> vec; 
 	vec v;                                
 
@@ -364,7 +399,7 @@ int main(int argc, char **argv)
 			int res_num_args = -1, res_num_args_coi = -1, res_num_args_coi_gr = -1, res_num_args_gr = -1, 
 				res_is_solved = -1, res_solve_lvl = -1, res_solve_iterations = -1;
 
-			int res_exec_code = handleFile(*it, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
+			int res_exec_code = handle_file(*it, csv_file_path, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
 				res_is_solved, res_solve_lvl, res_solve_iterations);
 
 			writeResultToParent(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
@@ -382,6 +417,7 @@ int main(int argc, char **argv)
 
 			alarm(LIMIT_TIMEOUT);  // install an alarm to be fired after LIMIT_TIMEOUT
 			pause();
+			alarm(0);
 
 			if (is_time_over) {
 				printf("TIME OUT\n");
@@ -392,15 +428,16 @@ int main(int argc, char **argv)
 					wait(NULL);
 					//count file for statistics
 					decode(stats, 9);
+					write_csv_line(*it, csv_file_path, 9, false, -1, -1, -1, -1, -1, -1, false, true, false);
 				}
 				else {
 					printf("alarm triggered, but child finished normally\n");
-					readResultFromChild(stats, pid_own, pid_other);
+					readResultFromChild(*it, csv_file_path, stats, pid_own, pid_other);
 				}
 			}else if(is_child_done) {
 				wait(NULL);
 				//cout << "waited until child process ended" << endl;
-				readResultFromChild(stats, pid_own, pid_other);
+				readResultFromChild(*it, csv_file_path, stats, pid_own, pid_other);
 			}
 
 			is_time_over = 0;
