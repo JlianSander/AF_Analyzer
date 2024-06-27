@@ -4,7 +4,7 @@ using namespace std;
 
 void static print_usage()
 {
-	cout << "Usage: " << PROGAMNAME << " -d <directory> \n\n";
+	cout << "Usage: " << PROGAMNAME << " -d <directory> -t <timeout> -i <limitIterations> -c <csv-file> \n\n";
 	cout << "  <directory>    container of  argumentation frameworks\n";
 	cout << "Options:\n";
 	cout << "  --help      Displays this help message.\n";
@@ -90,7 +90,7 @@ int calculate_solution(uint32_t query, AF &framework, VectorBitSet &initial_redu
 	list<uint32_t> proof_extension;
 	bool skept_accepted = false;
 	Solver_DS_PR::solve(query, framework, initial_reduct, proof_extension, file, is_verbose, 
-		LIMIT_CALCULATION_LEVEL, out_is_solved, out_level, out_iterations, LIMIT_ITERATIONS);
+		LIMIT_CALCULATION_LEVEL, out_is_solved, out_level, out_iterations, limit_iterations);
 
 	//free allocated memory
 	proof_extension.clear();
@@ -102,13 +102,13 @@ int calculate_solution(uint32_t query, AF &framework, VectorBitSet &initial_redu
 		}
 		return 7;
 	}
-	else if (out_level == 1 && out_iterations > 1 && out_iterations < LIMIT_ITERATIONS) {
+	else if (out_level == 1 && out_iterations > 1 && out_iterations < limit_iterations) {
 		if (is_verbose) {
 			cout << file.filename() << "#### solved on level 1 in iteration " << out_iterations << endl;
 		}
 		return 8;
 	}
-	else if (out_iterations >= LIMIT_ITERATIONS) {
+	else if (out_iterations >= limit_iterations) {
 		if (is_verbose) {
 			cout << file.filename() << "#### reached limit of iterations" << endl;
 		}
@@ -337,9 +337,19 @@ int main(int argc, char **argv)
 		case 'c':
 			csv_file_path = optarg;
 			break;
+		case 't':
+			limit_timeout = std::stoi(optarg);
+			break;
+		case 'i':
+			limit_iterations = std::stoi(optarg);
+			break;
 		default:
 			return 1;
 		}
+	}
+
+	if (csv_file_path.empty()) {
+		csv_file_path = std::string(".") + std::filesystem::path::preferred_separator + std::string("Data_Tmp.csv");
 	}
 
 	if (version_flag) {
@@ -415,7 +425,7 @@ int main(int argc, char **argv)
 			signal(SIGALRM, alarm_handler);
 			signal(SIGCHLD, child_handler);
 
-			alarm(LIMIT_TIMEOUT);  // install an alarm to be fired after LIMIT_TIMEOUT
+			alarm(limit_timeout);  // install an alarm to be fired after limit_timeout
 			pause();
 			alarm(0);
 

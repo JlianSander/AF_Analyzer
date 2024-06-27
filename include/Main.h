@@ -60,8 +60,9 @@ using recursive_directory_iterator = std::filesystem::recursive_directory_iterat
 constexpr auto PROGAMNAME = "AF_Analyzer";
 constexpr auto VERSIONNUMBER = "1.1";
 constexpr auto LIMIT_CALCULATION_LEVEL = 1;
-constexpr auto LIMIT_ITERATIONS = 10000;
-constexpr auto LIMIT_TIMEOUT = 60;
+
+static int limit_iterations = 10000;
+static int limit_timeout = 60;
 
 static int version_flag = 0;
 static int usage_flag = 0;
@@ -78,6 +79,8 @@ const struct option longopts[] =
 	{"formats", no_argument, &formats_flag, 1},
 	{"problems", no_argument, &problems_flag, 1},
 	{"d", required_argument, 0, 'd'},
+	{"t", required_argument, 0, 't'},
+	{"i", required_argument, 0, 'i'},
 	{"c", required_argument, 0, 'c'},
 	{0}
 };
