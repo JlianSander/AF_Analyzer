@@ -268,25 +268,26 @@ void readResultFromChild(filesystem::directory_entry file, string csv_file_path,
 {
 	int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations;
 
-	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations) && exec_code != 0) {
-		//decode value received
-		decode(stats, exec_code);
-		// update statistics
-		if (num_args_coi > -1) {
-			updateAverageProcent(stats.num_args_coi_base, stats.num_args_coi_reducted_procent, num_args, num_args_coi, true);
+	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations)) {
+		if (exec_code > 0) {
+			//decode value received
+			decode(stats, exec_code);
+			// update statistics
+			if (num_args_coi > -1) {
+				updateAverageProcent(stats.num_args_coi_base, stats.num_args_coi_reducted_procent, num_args, num_args_coi, true);
+			}
+			if (num_args_gr > -1) {
+				updateAverageProcent(stats.num_args_gr_base, stats.num_args_gr_reducted_procent, num_args, num_args_gr, true);
+			}
+			if (num_args_coi_gr > -1) {
+				updateAverageProcent(stats.num_args_coi_gr_base, stats.num_args_coi_gr_reducted_procent, num_args - num_args_coi, num_args_coi_gr, true);
+			}
+			if (is_solved == 1) {
+				updateAverage(stats.num_files_solved, stats.solve_iterations_avg, 1, solve_iterations, false);
+				updateAverage(stats.num_files_solved, stats.solve_lvl_avg, 1, solve_lvl, true);
+			}
 		}
-		if (num_args_gr > -1) {
-			updateAverageProcent(stats.num_args_gr_base, stats.num_args_gr_reducted_procent, num_args, num_args_gr, true);
-		}
-		if (num_args_coi_gr > -1) {
-			updateAverageProcent(stats.num_args_coi_gr_base, stats.num_args_coi_gr_reducted_procent, num_args - num_args_coi, num_args_coi_gr, true);
-		}
-		if (is_solved == 1) {
-			updateAverage(stats.num_files_solved, stats.solve_iterations_avg, 1, solve_iterations, false);
-			updateAverage(stats.num_files_solved, stats.solve_lvl_avg, 1, solve_lvl, true);
-		}
-	}
-	else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations) && exec_code == 0) {
+	}else {
 		//cout << "Process " << pid_own << ": ERROR value was not set." << endl;
 		cerr << "Process " << pid_other << " terminated" << endl;
 		//count file for statistics
