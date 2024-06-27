@@ -294,9 +294,6 @@ void readResultFromChild(filesystem::directory_entry file, string csv_file_path,
 		decode(stats, 6);
 		write_csv_line(file, csv_file_path, 6, false, -1, -1, -1, -1, -1, -1, false, false, true);
 	}
-
-	//reset value
-	write_message(pid_own, 0, -1, -1, -1, -1, -1, -1, -1);
 }
 
 /*===========================================================================================================================================================*/
@@ -464,6 +461,9 @@ int main(int argc, char **argv)
 		writeResultToParent(1, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
 			res_is_solved, res_solve_lvl, res_solve_iterations);
 		readResultFromChild(stats, 0, 1);*/
+
+		//reset value
+		write_message(pid_own, 0, -1, -1, -1, -1, -1, -1, -1);
 	}
 
 	cout << endl;
