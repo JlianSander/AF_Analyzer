@@ -428,7 +428,7 @@ int main(int argc, char **argv)
 			alarm(0);
 
 			if (is_time_over) {
-				printf("TIME OUT\n");
+				cout << "TIME OUT" << endl;
 				int result = waitpid(pid_other, NULL, WNOHANG);
 				if (result == 0) {
 					// child still running, so kill it
