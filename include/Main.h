@@ -49,6 +49,7 @@ extern "C" {
 #include "../include/logic/AF.h"
 #include "../include/logic/MessageDecoder.h"
 #include "../include/logic/MessageSystem.h"
+#include "../include/logic/Observation.h"
 #include "../include/logic/Parser_ICCMA.h"
 #include "../include/logic/Solver_DS_PR.h"
 #include "../include/logic/Statistics.h"

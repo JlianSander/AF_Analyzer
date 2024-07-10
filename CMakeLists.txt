@@ -32,6 +32,7 @@ set(HEADERS
 	${INCLD_LOGIC}/Parser_ICCMA.h
 	${INCLD_LOGIC}/PreProcessor_DS_PR.h
 	${INCLD_LOGIC}/Prioritizer.h
+	${INCLD_LOGIC}/Observation.h
 	${INCLD_LOGIC}/Reduct.h 
 	${INCLD_LOGIC}/SatSolver.h
 	${INCLD_LOGIC}/SatSolver_cadical.h

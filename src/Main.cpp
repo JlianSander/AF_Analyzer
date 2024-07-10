@@ -129,22 +129,23 @@ int static start_pre_processor(uint32_t query, AF &framework, const std::filesys
 	return exec_code;
 }
 
+/*===========================================================================================================================================================*/
+/*===========================================================================================================================================================*/
 
-void write_csv_line(filesystem::directory_entry file, string csv_file_path, int exec_code, bool is_solved_preproc, int num_args, int num_args_coi, int num_args_reduc_coi_gr, int num_args_gr,
-	int iterations, int level, bool is_solved, bool is_timeout, bool is_terminated) {
+void write_csv_line(filesystem::directory_entry file, string csv_file_path, Observation obsv, bool is_timeout, bool is_terminated) {
 
 	std::ofstream csv_file;
 	csv_file.open(csv_file_path, std::ios_base::app);
 	csv_file << file.path().filename() << "," 
-		<< to_string(exec_code) << "," 
-		<< to_string(is_solved_preproc) << "," 
-		<< (num_args != -1 ? to_string(num_args) : "" ) << "," 
-		<< (num_args_coi != -1 ? to_string(num_args_coi) : "") << ","
-		<< (num_args_gr != -1 ? to_string(num_args_gr) : "") << ","
-		<< (num_args_reduc_coi_gr != -1 ? to_string(num_args_reduc_coi_gr) : "") << ","
-		<< to_string(is_solved) << "," 
-		<< (iterations != -1 ? to_string(iterations) : "") << ","
-		<< (level != -1 ? to_string(level) : "") << ","
+		<< to_string(obsv.Executions_Code) << ","
+		<< to_string(obsv.Is_Solved_PreProc) << ","
+		<< (obsv.Number_Args != -1 ? to_string(obsv.Number_Args) : "" ) << ","
+		<< (obsv.Number_Args_COI != -1 ? to_string(obsv.Number_Args_COI) : "") << ","
+		<< (obsv.Number_Args_GR != -1 ? to_string(obsv.Number_Args_GR) : "") << ","
+		<< (obsv.Number_Args_COI_GR != -1 ? to_string(obsv.Number_Args_COI_GR) : "") << ","
+		<< to_string(obsv.Is_Solved) << ","
+		<< (obsv.Iterations != -1 ? to_string(obsv.Iterations) : "") << ","
+		<< (obsv.Level != -1 ? to_string(obsv.Level) : "") << ","
 		<< to_string(is_timeout) << "," 
 		<< to_string(is_terminated) <<"\n";
 	csv_file.close();
@@ -153,15 +154,14 @@ void write_csv_line(filesystem::directory_entry file, string csv_file_path, int 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-int handle_file(filesystem::directory_entry file, string csv_file_path, int &num_args, int &num_args_coi, int &num_args_reduc_coi_gr, int &num_args_gr, 
-	int &out_iterations, int &out_level, int &is_solved) {
+Observation handle_file(filesystem::directory_entry file, string csv_file_path) {
 
 	string file_format = file.path().extension();
 	bool is_solved_preproc = false;
 
 	if (file_format != ".i23") {
 		//cerr << " Unsupported file format: " << file_format << endl;
-		return -1;
+		return Observation();
 	}
 	else {
 		cout << endl;
@@ -170,20 +170,21 @@ int handle_file(filesystem::directory_entry file, string csv_file_path, int &num
 
 	AF framework;
 	ParserICCMA::parse_af(framework, file.path());
-	num_args = framework.num_args;
 	uint32_t query = read_query(file);
 	VectorBitSet initial_reduct_solver = VectorBitSet();
-	int exec_code = start_pre_processor(query, framework, file.path(), initial_reduct_solver, num_args_coi, num_args_reduc_coi_gr, num_args_gr);
-	is_solved_preproc = exec_code != 5;
-	if (exec_code == 5) {
+	Observation obsv = Observation();
+	obsv.Number_Args = framework.num_args;
+	obsv.Executions_Code = start_pre_processor(query, framework, file.path(), initial_reduct_solver, obsv.Number_Args_COI, obsv.Number_Args_COI_GR, obsv.Number_Args_GR);
+	obsv.Is_Solved_PreProc = obsv.Executions_Code != 5;
+	if (obsv.Executions_Code == 5) {
 		//instance was not solved during preprocessing
-		exec_code = calculate_solution(query, framework, initial_reduct_solver, file.path(), out_iterations, out_level, is_solved, true);
+		obsv.Executions_Code = calculate_solution(query, framework, initial_reduct_solver, file.path(), obsv.Is_Solved, obsv.Level, obsv.Iterations, true);
 	}
+	
 
-	write_csv_line(file, csv_file_path, exec_code, is_solved_preproc, num_args, num_args_coi, num_args_reduc_coi_gr, num_args_gr,
-		out_iterations, out_level, is_solved, false, false);
+	write_csv_line(file, csv_file_path, obsv, false, false);
 
-	return exec_code;
+	return obsv;
 }
 
 /*===========================================================================================================================================================*/
@@ -266,25 +267,29 @@ void static updateAverageProcent(int &base, double &cur_val_procent, int new_bas
 
 void readResultFromChild(filesystem::directory_entry file, string csv_file_path, Statistics &stats, pid_t pid_own, pid_t pid_other)
 {
-	int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations;
+	Observation obsv = Observation();
 
-	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations)) {
-		if (exec_code > 0) {
+	if (read_message(pid_own, obsv)) {
+		if (obsv.Executions_Code > 0) {
 			//decode value received
-			decode(stats, exec_code);
+			decode(stats, obsv.Executions_Code);
 			// update statistics
-			if (num_args_coi > -1) {
-				updateAverageProcent(stats.num_args_coi_base, stats.num_args_coi_reducted_procent, num_args, num_args_coi, true);
+			if (obsv.Number_Args_COI > -1) {
+				updateAverageProcent(stats.num_args_coi_base, stats.num_args_coi_reducted_procent, obsv.Number_Args, obsv.Number_Args_COI, true);
 			}
-			if (num_args_gr > -1) {
-				updateAverageProcent(stats.num_args_gr_base, stats.num_args_gr_reducted_procent, num_args, num_args_gr, true);
+			if (obsv.Number_Args_GR > -1) {
+				updateAverageProcent(stats.num_args_gr_base, stats.num_args_gr_reducted_procent, obsv.Number_Args, obsv.Number_Args_GR, true);
 			}
-			if (num_args_coi_gr > -1) {
-				updateAverageProcent(stats.num_args_coi_gr_base, stats.num_args_coi_gr_reducted_procent, num_args - num_args_coi, num_args_coi_gr, true);
+			if (obsv.Number_Args_COI_GR > -1) {
+				updateAverageProcent(
+					stats.num_args_coi_gr_base, 
+					stats.num_args_coi_gr_reducted_procent, 
+					obsv.Number_Args - obsv.Number_Args_COI, 
+					obsv.Number_Args_COI_GR, true);
 			}
-			if (is_solved == 1) {
-				updateAverage(stats.num_files_solved, stats.solve_iterations_avg, 1, solve_iterations, false);
-				updateAverage(stats.num_files_solved, stats.solve_lvl_avg, 1, solve_lvl, true);
+			if (obsv.Is_Solved == 1) {
+				updateAverage(stats.num_files_solved, stats.solve_iterations_avg, 1, obsv.Iterations, false);
+				updateAverage(stats.num_files_solved, stats.solve_lvl_avg, 1, obsv.Level, true);
 			}
 		}
 	}else {
@@ -292,21 +297,20 @@ void readResultFromChild(filesystem::directory_entry file, string csv_file_path,
 		cerr << "Process " << pid_other << " terminated" << endl;
 		//count file for statistics
 		decode(stats, 6);
-		write_csv_line(file, csv_file_path, 6, false, -1, -1, -1, -1, -1, -1, false, false, true);
+		write_csv_line(file, csv_file_path, obsv, false, true);
 	}
 }
 
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-void writeResultToParent(pid_t pid_own, int res_exec_code, int res_num_args, int res_num_args_coi, int res_num_args_coi_gr, int res_num_args_gr, 
-	int res_is_solved, int res_level, int res_iterations)
+void writeResultToParent(pid_t pid_own, Observation toWrite)
 {
-	int exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations;
-	if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations) && exec_code == 0) {
-		write_message(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr, res_is_solved, res_level, res_iterations);
+	Observation readObsv = Observation();
+	if (read_message(pid_own, readObsv) && readObsv.Executions_Code == 0) {
+		write_message(pid_own, toWrite);
 	}
-	else if (read_message(pid_own, exec_code, num_args, num_args_coi, num_args_coi_gr, num_args_gr, is_solved, solve_lvl, solve_iterations) && exec_code != 0) {
+	else if (read_message(pid_own, readObsv) && readObsv.Executions_Code != 0) {
 		cout << "Process " << pid_own << ": ERROR value was not reset." << endl;
 	}
 }
@@ -370,6 +374,11 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
+	cout << "Process files in " << dir << endl;
+	cout << "timeout: " << limit_timeout << endl;
+	cout << "max. iterations: " << limit_iterations << endl;
+	cout << "Save results in " << csv_file_path << endl;
+
 	if (dir.empty()) {
 		cerr << argv[0] << ": Input directory must be specified via -d flag\n";
 		return 1;
@@ -390,7 +399,9 @@ int main(int argc, char **argv)
 											// is not ordered on some file systems
 
 	//cout << "Process " << getpid() << ": Init the initial value." << endl;																	//DEBUT
-	write_message(getpid(), 0, -1, -1, -1, -1, -1, -1, -1);
+	Observation initObsv = Observation();
+	initObsv.Executions_Code = 0;
+	write_message(getpid(), initObsv);
 	Statistics stats;
 	for (vec::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it)
 	{
@@ -402,16 +413,9 @@ int main(int argc, char **argv)
 			exit(EXIT_FAILURE);
 		}else if (pid_other == 0) {
 			//============== CHILD PROCESS ==============
-			//cout << "Child: " << pid_own << endl;																								//DEBUG
-			//init values
-			int res_num_args = -1, res_num_args_coi = -1, res_num_args_coi_gr = -1, res_num_args_gr = -1, 
-				res_is_solved = -1, res_solve_lvl = -1, res_solve_iterations = -1;
-
-			int res_exec_code = handle_file(*it, csv_file_path, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
-				res_is_solved, res_solve_lvl, res_solve_iterations);
-
-			writeResultToParent(pid_own, res_exec_code, res_num_args, res_num_args_coi, res_num_args_coi_gr, res_num_args_gr,
-				res_is_solved, res_solve_lvl, res_solve_iterations);
+			//cout << "Child: " << pid_own << endl;			
+			Observation obsv = handle_file(*it, csv_file_path);
+			writeResultToParent(pid_own, obsv);
 
 			//cout << "=========== End of process " << pid_own << endl;																			//DEBUG
 			exit(EXIT_SUCCESS);
@@ -436,7 +440,11 @@ int main(int argc, char **argv)
 					wait(NULL);
 					//count file for statistics
 					decode(stats, 9);
-					write_csv_line(*it, csv_file_path, 9, false, -1, -1, -1, -1, -1, -1, false, true, false);
+					Observation obsv = Observation();
+					obsv.Executions_Code = 9;
+					obsv.Is_Solved = false;
+					obsv.Is_Solved_PreProc = false;
+					write_csv_line(*it, csv_file_path, obsv, true, false);
 				}
 				else {
 					printf("alarm triggered, but child finished normally\n");
@@ -463,7 +471,7 @@ int main(int argc, char **argv)
 		readResultFromChild(stats, 0, 1);*/
 
 		//reset value
-		write_message(pid_own, 0, -1, -1, -1, -1, -1, -1, -1);
+		write_message(pid_own, initObsv);
 	}
 
 	cout << endl;

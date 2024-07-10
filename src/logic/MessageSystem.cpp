@@ -3,8 +3,7 @@
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_reduc_coi, int &num_args_reduc_coi_gr, int &num_args_reduc_gr, int &is_solved,
-    int &solve_lvl, int &solve_iterations)
+bool read_message(int curr_pid, Observation &obsv)
 {
     int shmFd = shm_open(SHARED_OBJ_NAME, O_RDWR, S_IRUSR | S_IWUSR);
     ftruncate(shmFd, sizeof(message));
@@ -18,14 +17,14 @@ bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_red
     else
     {
         //printf("Process %d: Receive %d from PID %d.\n", curr_pid, msg_ptr->counter, msg_ptr->pid);                                     //DEBUG
-        exec_code = msg_ptr->exec_code;
-        num_args = msg_ptr->num_args;
-        num_args_reduc_coi = msg_ptr->num_args_reduc_coi;
-        num_args_reduc_coi_gr = msg_ptr->num_args_reduc_coi_gr;
-        num_args_reduc_gr = msg_ptr->num_args_reduc_gr;
-        is_solved = msg_ptr->is_solved;
-        solve_lvl = msg_ptr->solve_lvl;
-        solve_iterations = msg_ptr->solve_iterations;
+        obsv.Executions_Code = msg_ptr->exec_code;
+        obsv.Number_Args = msg_ptr->num_args;
+        obsv.Number_Args_COI = msg_ptr->num_args_reduc_coi;
+        obsv.Number_Args_COI_GR = msg_ptr->num_args_reduc_coi_gr;
+        obsv.Number_Args_GR = msg_ptr->num_args_reduc_gr;
+        obsv.Is_Solved = msg_ptr->is_solved;
+        obsv.Level = msg_ptr->solve_lvl;
+        obsv.Iterations = msg_ptr->solve_iterations;
         munmap(msg_ptr, sizeof(message));
     }
 
@@ -37,8 +36,7 @@ bool read_message(int curr_pid, int &exec_code, int &num_args, int &num_args_red
 /*===========================================================================================================================================================*/
 /*===========================================================================================================================================================*/
 
-bool write_message(int pid, int exec_code, int num_args, int num_args_reduc_coi, int num_args_reduc_coi_gr, int num_args_reduc_gr, int is_solved,
-    int solve_lvl, int solve_iterations)
+bool write_message(int pid, Observation obsv)
 {
     int shmFd = shm_open(SHARED_OBJ_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     ftruncate(shmFd, sizeof(message));
@@ -46,14 +44,14 @@ bool write_message(int pid, int exec_code, int num_args, int num_args_reduc_coi,
 
     //printf("Process %d: Write %d\n", pid, value);                                                                                     //DEBUG
     msg_ptr->pid = pid;
-    msg_ptr->exec_code = exec_code;
-    msg_ptr->num_args = num_args;
-    msg_ptr->num_args_reduc_coi = num_args_reduc_coi;
-    msg_ptr->num_args_reduc_coi_gr = num_args_reduc_coi_gr;
-    msg_ptr->num_args_reduc_gr = num_args_reduc_gr;
-    msg_ptr->is_solved = is_solved;
-    msg_ptr->solve_lvl = solve_lvl;
-    msg_ptr->solve_iterations = solve_iterations;
+    msg_ptr->exec_code = obsv.Executions_Code;
+    msg_ptr->num_args = obsv.Number_Args;
+    msg_ptr->num_args_reduc_coi = obsv.Number_Args_COI;
+    msg_ptr->num_args_reduc_coi_gr = obsv.Number_Args_COI_GR;
+    msg_ptr->num_args_reduc_gr = obsv.Number_Args_GR;
+    msg_ptr->is_solved = obsv.Is_Solved;
+    msg_ptr->solve_lvl = obsv.Level;
+    msg_ptr->solve_iterations = obsv.Iterations;
 
     munmap(msg_ptr, sizeof(message));
 
